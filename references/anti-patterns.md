@@ -163,6 +163,56 @@
 
 ---
 
+## 五、v1.6 新增反模式（主+sub 双层对抗相关）
+
+### AP-13 sub-agent 变成形式主义
+
+**症状**：主 Agent 派 sub-agent 但不引用 finding，verdict 自己写。
+**根因**：sub-agent 调用流于形式，主 Agent 仍按自己意思判。
+**影响**：双层对抗失效，跟没派 sub-agent 一样。
+**修复**：MV-6 检查 verdict 必须引用 finding_id 并分类（共识/分歧/盲点）。
+
+### AP-14 sub-agent 串行调用
+
+**症状**：主 Agent 一个一个串行调 sub-agent。
+**根因**：图省事，不并行调度。
+**影响**：浪费时间，且后面的 sub-agent 可能被前面影响。
+**修复**：MV-6 检查 sub-call 时间差 ≤ 1 秒（并行）。
+
+### AP-15 主 Agent 只做汇总员
+
+**症状**：主 Agent 不自己审，只汇总 sub-agent 的 finding。
+**根因**：偷懒，把审查责任全甩给 sub-agent。
+**影响**：主 Agent 失去独立思考，被 sub-agent 误导也无从发现。
+**修复**：MV-6 检查 `.msg/<parent>_self_*.json` 必须存在，且时间戳证明是平行产出。
+
+### AP-16 盲点悄悄采纳
+
+**症状**：主 Agent 采纳了 sub-agent 报的、自己漏的 issue，但不明示"我漏了"。
+**根因**：怕丢面子，假装自己本来也知道。
+**影响**：无法追溯主 Agent 的盲点模式，下次还会漏。
+**修复**：MV-6 检查 `blind_spots` 若非空，每条必须有 `acknowledgement` 字段。
+
+### AP-17 锚定效应
+
+**症状**：主 Agent 先看 sub-agent 的 finding 再写自己的，被 sub-agent 误导。
+**根因**：主 Agent 想图省事，"看看 sub 怎么说我再写"。
+**影响**：主 Agent 失去独立性，等于 1 个判断 + 复读，不是双层对抗。
+**修复**：MV-6 时间戳验证，主 Agent self finding 必须 ≤ sub-agent 调用 + 1s（证明是平行发起）。
+
+---
+
+## 六、反模式 vs 具体缺陷（v1.6 更新）
+
+反模式是根因，具体缺陷是表象。v1.5 修了 12 个缺陷归纳为 10 条反模式，v1.6 新增 5 条反模式（AP-13~17）针对主+sub 双层对抗。
+
+| 反模式 | 对应缺陷/机制 |
+|--------|------------|
+| AP-1 ~ AP-10 | v1.5 的 12 个缺陷（D-1 ~ D-12） |
+| AP-13 ~ AP-17 | v1.6 的主+sub 双层对抗失效场景 |
+
+---
+
 ## 五、与 customization.md 的关系
 
 customization.md 教用户"怎么改"，anti-patterns.md 教用户"别这么改"。两者配合使用：

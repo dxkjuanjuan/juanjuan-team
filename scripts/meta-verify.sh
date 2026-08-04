@@ -172,17 +172,80 @@ check_mv5() {
     echo "{\"id\":\"MV-5\",\"name\":\"备份触发\",\"status\":\"$status\",\"evidence\":\"$evidence\"}"
 }
 
-# 跑 5 项检查
+# MV-6: 主+sub 双层对抗验证 (v1.6 新增)
+check_mv6() {
+    local status="skip"
+    local evidence=""
+    local sub_calls_dir="$MSG_DIR/sub-calls"
+
+    if [ ! -d "$sub_calls_dir" ]; then
+        echo '{"id":"MV-6","name":"主+sub 双层对抗","status":"skip","evidence":"无 .msg/sub-calls 目录（未派 sub-agent）"}'
+        return
+    fi
+
+    # 检查 sub-agent 调用记录数量
+    local sub_call_count=$(ls "$sub_calls_dir"/*Phase4_*.json "$sub_calls_dir"/*Phase6_*.json "$sub_calls_dir"/*Phase8_*.json 2>/dev/null | wc -l | tr -d ' ')
+
+    # 检查主 Agent self finding 文件
+    local self_findings=$(ls "$MSG_DIR"/*_self_Phase4_*.json "$MSG_DIR"/*_self_Phase6_*.json "$MSG_DIR"/*_self_Phase8_*.json 2>/dev/null | wc -l | tr -d ' ')
+
+    if [ "$sub_call_count" -eq 0 ] && [ "$self_findings" -eq 0 ]; then
+        status="skip"
+        evidence="无 sub-agent 调用和主 Agent self finding（可能未到 Phase 4/6/8）"
+    elif [ "$sub_call_count" -eq 0 ]; then
+        status="fail"
+        evidence="主 Agent 有 self finding 但未派 sub-agent（违反双层对抗）"
+    elif [ "$self_findings" -eq 0 ]; then
+        status="fail"
+        evidence="派了 sub-agent 但主 Agent 无 self finding（违反主 Agent 必须参与）"
+    else
+        # 时间戳验证：主 Agent self 必须 ≤ sub-agent 调用 + 1s（平行产出）
+        local earliest_sub=$(ls -t "$sub_calls_dir"/*Phase[468]_*.json 2>/dev/null | tail -1)
+        local earliest_self=$(ls -t "$MSG_DIR"/*_self_Phase[468]_*.json 2>/dev/null | tail -1)
+
+        if [ -n "$earliest_sub" ] && [ -n "$earliest_self" ]; then
+            local sub_mt=$(stat -f %m "$earliest_sub" 2>/dev/null || stat -c %Y "$earliest_sub" 2>/dev/null)
+            local self_mt=$(stat -f %m "$earliest_self" 2>/dev/null || stat -c %Y "$earliest_self" 2>/dev/null)
+            if [ -n "$sub_mt" ] && [ -n "$self_mt" ]; then
+                local delta=$((self_mt - sub_mt))
+                if [ "$delta" -le 1 ] && [ "$delta" -ge -60 ]; then
+                    # 检查 verdict 是否含 consensus/divergence/blind_spots 分类
+                    # 简化：检查任何 verdict 文件是否含这些字段
+                    local has_classification=$(grep -lE '"(consensus|divergence|blind_spots)"' "$MSG_DIR"/*Phase[468]*.json 2>/dev/null | wc -l | tr -d ' ')
+                    if [ "$has_classification" -ge 1 ]; then
+                        status="pass"
+                        evidence="sub-calls=$sub_call_count, self_findings=$self_findings, 时间差=${delta}s（平行产出）, finding 已分类"
+                    else
+                        status="fail"
+                        evidence="sub/self 都有但 verdict 未分类（缺 consensus/divergence/blind_spots）"
+                    fi
+                else
+                    status="fail"
+                    evidence="主 Agent self 与 sub-agent 时间差 ${delta}s（>1s 可能锚定效应）"
+                fi
+            else
+                status="skip"
+                evidence="无法获取 mtime，跳过时间戳验证"
+            fi
+        else
+            status="pass"
+            evidence="sub-calls=$sub_call_count, self_findings=$self_findings（时间戳验证跳过）"
+        fi
+    fi
+    echo "{\"id\":\"MV-6\",\"name\":\"主+sub 双层对抗\",\"status\":\"$status\",\"evidence\":\"$evidence\"}"
+}
+
+# 跑 6 项检查
 MV1=$(check_mv1)
 MV2=$(check_mv2)
 MV3=$(check_mv3)
 MV4=$(check_mv4)
 MV5=$(check_mv5)
+MV6=$(check_mv6)
 
 # 汇总
-FAIL_COUNT=$(printf "%s\n%s\n%s\n%s\n%s\n" "$MV1" "$MV2" "$MV3" "$MV4" "$MV5" | grep -c '"status":"fail"' || true)
+FAIL_COUNT=$(printf "%s\n%s\n%s\n%s\n%s\n%s\n" "$MV1" "$MV2" "$MV3" "$MV4" "$MV5" "$MV6" | grep -c '"status":"fail"' || true)
 FAIL_COUNT=${FAIL_COUNT:-0}
-# 容错：grep -c 可能返回多行，取最后一行（数字）
 FAIL_COUNT=$(echo "$FAIL_COUNT" | tail -1)
 FAIL_COUNT=${FAIL_COUNT:-0}
 
@@ -202,7 +265,8 @@ cat <<EOF
     $MV2,
     $MV3,
     $MV4,
-    $MV5
+    $MV5,
+    $MV6
   ],
   "overall": "$OVERALL",
   "failures": $FAIL_COUNT

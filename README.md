@@ -4,9 +4,15 @@
 
 > 别再让一个 LLM 同时负责设计、实现和审查自己的工作。卷卷团队派出 7 个专业 Agent，独立分析、辩论、审计每一个产出——让错误在你看到之前就被拦截。
 
+📚 **快速入门**:
+- 🆕 **什么都不懂？** → [`docs/for-non-developers.md`](docs/for-non-developers.md)（大白话指南，零代码）
+- ⚡ **5 分钟上手** → [`docs/getting-started.md`](docs/getting-started.md)
+- 📖 **完整文档** → 本 README
+- 🔬 **v1.5 自检+进化记录** → `~/docs/superpowers/specs/2026-08-04-juanjuan-team-self-audit-design.md`
+
 [![License: Personal Use](https://img.shields.io/badge/License-Personal%20Use-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://claude.com/claude-code)
-[![Status: v1.0](https://img.shields.io/badge/status-v1.0%20stable-brightgreen)](#)
+[![Status: v1.6](https://img.shields.io/badge/status-v1.6%20beta-brightgreen)](#)
 [![Min Claude Code](https://img.shields.io/badge/Min%20Claude%20Code-2.0%2B-orange)](#)
 
 🌐 **语言:** **中文** | [English](README.en.md) | [日本語](README.ja.md) | [한국어](README.ko.md)

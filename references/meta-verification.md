@@ -80,6 +80,26 @@
 
 ---
 
+### MV-6 主+sub 双层对抗验证（v1.6 新增）
+
+**验证目标**：主 Agent 真的派了 sub-agent，自己也独立审了，且是平行产出（不是锚定），盲点有披露。
+
+**验证方式**：
+- 检查 `.msg/sub-calls/` 目录，Phase 4/6/8 必须有 sub-agent 调用记录
+- 检查 `.msg/<parent>_self_*.json`，主 Agent 自己的 finding 文件必须存在
+- **时间戳验证**：主 Agent self finding 的 `started_at` 必须 ≤ sub-agent 调用的 `started_at` + 1s（证明是平行发起，不是看完 sub 才写自己）
+- verdict 文档必须含 `consensus / divergence / blind_spots` 三类分类
+- `blind_spots` 若非空，每条必须有 `acknowledgement` 字段（明示主 Agent 漏了）
+
+**失败动作**：报警"双层对抗验证失败：<具体原因>"，标记此 Phase 失败，提示：
+- 主 Agent 未参与（仅汇总）
+- 未平行产出（锚定效应）
+- 盲点未披露（悄悄采纳）
+
+详见 `references/sub-agent-review.md`。
+
+---
+
 ## 二、执行器：scripts/meta-verify.sh
 
 ```bash

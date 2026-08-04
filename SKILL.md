@@ -1,9 +1,13 @@
 ---
 name: juanjuan-team
-description: 多 Agent 对抗式协作工作流（juanjuan team）。当用户描述任务（含「做」「修」「写」「实现」「帮我」等动词 + 任务对象 + 复杂度信号）时自动触发，或显式说「juanjuan skill」「用卷卷 skill」「team up」「multi-agent」。先调 superpowers:brainstorming 头脑风暴澄清需求，再选模式（Safe/Manual/Auto/YOLO），然后建项目目录、跑 7 人 Agent 团队（leader/convener/architect/frontend/coder/reviewer/docs-researcher）、智能备份、存档记忆。核心价值是对抗式协作——多个 Agent 同步独立审核同一产出，互相挑错，避免单 Agent 认知连续性错误。**7 Agent 只是默认配置，可改 prompt/数量/理论框架，见 references/customization.md。单文件任务可走 Lite 模式（6 Phase），见 references/lite-mode.md**。
+description: 多 Agent 对抗式协作工作流（juanjuan team）。当用户描述任务（含「做」「修」「写」「实现」「帮我」等动词 + 任务对象 + 复杂度信号）时自动触发，或显式说「juanjuan skill」「用卷卷 skill」「team up」「multi-agent」。先调 superpowers:brainstorming 头脑风暴澄清需求，再选模式（Safe/Manual/Auto/YOLO），然后建项目目录、跑 7 人 Agent 团队（leader/convener/architect/frontend/coder/reviewer/docs-researcher）、智能备份、存档记忆。核心价值是对抗式协作——多个 Agent 同步独立审核同一产出，互相挑错，避免单 Agent 认知连续性错误。**v1.6 新增：主+sub 双层对抗——每个主 Agent 必须自己独立审 + 同时派 sub-agent 平行审，最后做共识/分歧/盲点三方综合，见 references/sub-agent-review.md。7 Agent 只是默认配置，可改 prompt/数量/理论框架，见 references/customization.md。单文件任务可走 Lite 模式（6 Phase），见 references/lite-mode.md**。
 ---
 
 # Juanjuan Team Skill
+
+> **Juanjuan Team** — Claude Code 首个对抗式协作多 Agent Skill。
+> 7 个 Agent + 11 Phase + 4 模式 + 主+sub 双层对抗审核（v1.6）。
+> 让"对抗式协作"从口头规则变成可验证的工程化机制。
 
 ## 一、触发方式
 
@@ -363,7 +367,7 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 - 团队配置热加载（运行中调整角色）
 - JAAOS 三引擎融合架构（Ruflo + Hermes Kanban + AgentTeams）
 
-## 十五、自检与进化（v1.5 新增）
+## 十五、自检与进化（v1.5 新增，v1.6 扩展）
 
 ### 15.1 何时自检
 
@@ -373,7 +377,7 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 
 ### 15.2 怎么自检
 
-跑 `scripts/meta-verify.sh <项目目录>` 验证 5 项（详见 `references/meta-verification.md`）：
+跑 `scripts/meta-verify.sh <项目目录>` 验证 6 项（v1.6 新增 MV-6）：
 
 | 检查项 | 验证目标 |
 |--------|---------|
@@ -382,6 +386,7 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 | MV-3 模式切换日志 | 模式切换真的 Phase 边界原子化 |
 | MV-4 记忆闭环 | Phase 10 存的 memory Phase 0.5 能查到 |
 | MV-5 备份触发 | reviewer pass 事件真的触发备份 |
+| MV-6 主+sub 双层对抗（v1.6） | 主 Agent 自己审 + sub-agent 平行审 + 综合分类（共识/分歧/盲点）|
 
 任何一项失败 → 回到 `docs/superpowers/specs/YYYY-MM-DD-juanjuan-team-self-audit-design.md` 修订 → 重跑。
 
@@ -393,6 +398,7 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 4. **借鉴 > 自创**：先看 hermes-studio / agent-review-panel / ChatGPT JAIT 有没有现成方案
 5. **YAGNI**：不在 evolution-roadmap 上的功能不做
 6. **反模式驱动**：每次发现的缺陷归纳成反模式（`references/anti-patterns.md`），避免重蹈覆辙
+7. **主+sub 平行对抗**（v1.6 新增）：主 Agent 不能只做汇总员，必须自己独立审，与 sub-agent 平行产出，盲点必须披露
 
 ### 15.4 可观测性（v1.5 新增）
 
@@ -401,48 +407,60 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 - **.phase-summary.md**：rolling summary，每 Phase 结束 docs-researcher 更新，下次 Phase 0.5 优先读此文件
 - **message-protocol.md 加 run_id 字段**：所有 `.msg/*.json` 必须含 `run_id`
 
-### 15.5 v1.5 文件结构更新
+### 15.5 主+sub 双层对抗（v1.6 新增）
+
+每个主 Agent 在 Phase 4/6/8 审核时：
+1. **主 Agent 自己独立审**：产 self_findings（不能只做汇总员）
+2. **同时派 sub-agent 平行审**：时间差 ≤ 1s（避免锚定效应）
+3. **综合分类**：verdict 必须含 `consensus / divergence / blind_spots` 三类
+4. **盲点披露**：主 Agent 采纳 sub-agent 补的 issue 时，必须明示"我漏了 X"
+
+详见 `references/sub-agent-review.md`。元验证 MV-6 检查此机制。
+
+### 15.6 v1.6 文件结构更新
 
 ```
 ~/.claude/skills/juanjuan-team/
-├── SKILL.md                          # 本文件（v1.5 加 §十五）
+├── SKILL.md                          # v1.6 加 §15.5 主+sub 双层对抗
+├── docs/                              # v1.6 新增
+│   ├── getting-started.md             # ★ 5 分钟上手
+│   └── for-non-developers.md          # ★ 非技术用户指南
 ├── references/
 │   ├── global-rules.md               # v1.5 加第 11 条 run_id 必填
-│   ├── role-*.md                     # 7 个角色（未改动）
-│   ├── decision-engine.md            # v1.5 修 D-11 数学 + D-12 Optimizer 归属
+│   ├── role-*.md                     # 7 个角色
+│   ├── decision-engine.md            # v1.5 修 D-11/D-12
 │   ├── state-machine.md
 │   ├── skill-allocation.md
-│   ├── agent-commands.md             # v1.5 修 D-3/D-4 跨平台表
+│   ├── agent-commands.md             # v1.5 修 D-3/D-4
 │   ├── customization.md
-│   ├── message-protocol.md           # v1.5 修 D-10 + 加 run_id 字段
-│   ├── fault-tolerance.md            # v1.5 修 D-9 路径对齐
+│   ├── message-protocol.md           # v1.5 加 run_id 字段
+│   ├── fault-tolerance.md            # v1.5 修 D-9
 │   ├── lite-mode.md
 │   ├── domain-checklists.md
-│   ├── backup-script.sh              # v1.5 修 D-5 模式感知 + D-6 不吞错
-│   ├── meta-verification.md          # ★ v1.5 新增：元验证规范
-│   ├── observability.md              # ★ v1.5 新增：run_id + phase-trace + summary
-│   ├── anti-patterns.md              # ★ v1.5 新增：10 条反模式清单
-│   └── evolution-roadmap.md          # ★ v1.5 新增：v1.5→v2.0 路径
+│   ├── backup-script.sh              # v1.5 修 D-5/D-6
+│   ├── meta-verification.md          # v1.5 新增，v1.6 加 MV-6
+│   ├── observability.md              # v1.5 新增
+│   ├── anti-patterns.md              # v1.5 新增（v1.6 加 AP-13~17）
+│   ├── evolution-roadmap.md          # v1.5 新增
+│   └── sub-agent-review.md           # ★ v1.6 新增：主+sub 双层对抗规范
 └── scripts/
     ├── install.sh
     ├── swarm-spawn.sh                # v1.5 修 D-1/D-2
     ├── backup-check.sh
     ├── create-project.sh
     ├── heartbeat-check.sh
-    ├── hook-enforce.sh               # v1.5 修 D-7 扩正则 + D-8 项目 rules 感知
+    ├── hook-enforce.sh               # v1.5 修 D-7/D-8
     ├── lite-check.sh
     ├── send-msg.sh
-    ├── meta-verify.sh                # ★ v1.5 新增：元验证执行器
-    ├── e2e-dry-run.sh                # ★ v1.5 新增：e2e 干跑
-    └── memory-roundtrip-test.sh      # ★ v1.5 新增：记忆闭环验证
+    ├── meta-verify.sh                # v1.5 新增，v1.6 加 MV-6 检查
+    ├── e2e-dry-run.sh                # v1.5 新增
+    └── memory-roundtrip-test.sh      # v1.5 新增
 ```
 
-### 15.6 v1.5 自检结果
+### 15.7 v1.6 自检结果
 
-本次自检修复的 12 个缺陷对应 10 条反模式（见 `references/anti-patterns.md`）。系统性改进：
-
-- **SP-1 元验证缺失** → 新增 meta-verify.sh + 5 项检查
-- **SP-2 冷启动断层** → 新增 e2e-dry-run.sh
-- **SP-3 记忆闭环未验证** → 新增 memory-roundtrip-test.sh + MV-4 检查
-
-下次迭代（v1.6）计划见 `references/evolution-roadmap.md`。
+- 新增 sub-agent-review.md（主+sub 平行对抗 + 三方综合规范）
+- 新增 MV-6 元验证（主 Agent self + sub 平行 + 盲点披露）
+- 新增 5 条反模式（AP-13~17：形式主义 / 串行 / 汇总员 / 悄悄采纳 / 锚定）
+- 新增 docs/ 目录（小白指南 + 非技术用户指南）
+- README 顶部加快速入门链接
