@@ -362,3 +362,87 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 - 支持 GitLab / Bitbucket 等非 GitHub 仓库
 - 团队配置热加载（运行中调整角色）
 - JAAOS 三引擎融合架构（Ruflo + Hermes Kanban + AgentTeams）
+
+## 十五、自检与进化（v1.5 新增）
+
+### 15.1 何时自检
+
+- 每次大改 skill 后（v1.x → v1.(x+1)）
+- 每月一次定期自检
+- 怀疑对抗式协作失效时
+
+### 15.2 怎么自检
+
+跑 `scripts/meta-verify.sh <项目目录>` 验证 5 项（详见 `references/meta-verification.md`）：
+
+| 检查项 | 验证目标 |
+|--------|---------|
+| MV-1 独立审核证据 | Phase 4/6/8 三方真的独立产出意见 |
+| MV-2 并行调用证据 | convener 真的并行（不是串行）调用三方 |
+| MV-3 模式切换日志 | 模式切换真的 Phase 边界原子化 |
+| MV-4 记忆闭环 | Phase 10 存的 memory Phase 0.5 能查到 |
+| MV-5 备份触发 | reviewer pass 事件真的触发备份 |
+
+任何一项失败 → 回到 `docs/superpowers/specs/YYYY-MM-DD-juanjuan-team-self-audit-design.md` 修订 → 重跑。
+
+### 15.3 进化原则
+
+1. **系统性问题 > 具体缺陷**：修缺陷不修系统 = 下次还会冒出来
+2. **可观测 > 自觉**：规则要变成脚本能验证的
+3. **闭环 > 单向**：存的记忆要能查出来才算闭环
+4. **借鉴 > 自创**：先看 hermes-studio / agent-review-panel / ChatGPT JAIT 有没有现成方案
+5. **YAGNI**：不在 evolution-roadmap 上的功能不做
+6. **反模式驱动**：每次发现的缺陷归纳成反模式（`references/anti-patterns.md`），避免重蹈覆辙
+
+### 15.4 可观测性（v1.5 新增）
+
+- **run_id**：每个 Phase 产生一个 `run-<phase>-<timestamp>-<rand4>`，绑定该 Phase 所有消息和产出物（详见 `references/observability.md`）
+- **.phase-trace.json**：记录所有 Phase 执行轨迹
+- **.phase-summary.md**：rolling summary，每 Phase 结束 docs-researcher 更新，下次 Phase 0.5 优先读此文件
+- **message-protocol.md 加 run_id 字段**：所有 `.msg/*.json` 必须含 `run_id`
+
+### 15.5 v1.5 文件结构更新
+
+```
+~/.claude/skills/juanjuan-team/
+├── SKILL.md                          # 本文件（v1.5 加 §十五）
+├── references/
+│   ├── global-rules.md               # v1.5 加第 11 条 run_id 必填
+│   ├── role-*.md                     # 7 个角色（未改动）
+│   ├── decision-engine.md            # v1.5 修 D-11 数学 + D-12 Optimizer 归属
+│   ├── state-machine.md
+│   ├── skill-allocation.md
+│   ├── agent-commands.md             # v1.5 修 D-3/D-4 跨平台表
+│   ├── customization.md
+│   ├── message-protocol.md           # v1.5 修 D-10 + 加 run_id 字段
+│   ├── fault-tolerance.md            # v1.5 修 D-9 路径对齐
+│   ├── lite-mode.md
+│   ├── domain-checklists.md
+│   ├── backup-script.sh              # v1.5 修 D-5 模式感知 + D-6 不吞错
+│   ├── meta-verification.md          # ★ v1.5 新增：元验证规范
+│   ├── observability.md              # ★ v1.5 新增：run_id + phase-trace + summary
+│   ├── anti-patterns.md              # ★ v1.5 新增：10 条反模式清单
+│   └── evolution-roadmap.md          # ★ v1.5 新增：v1.5→v2.0 路径
+└── scripts/
+    ├── install.sh
+    ├── swarm-spawn.sh                # v1.5 修 D-1/D-2
+    ├── backup-check.sh
+    ├── create-project.sh
+    ├── heartbeat-check.sh
+    ├── hook-enforce.sh               # v1.5 修 D-7 扩正则 + D-8 项目 rules 感知
+    ├── lite-check.sh
+    ├── send-msg.sh
+    ├── meta-verify.sh                # ★ v1.5 新增：元验证执行器
+    ├── e2e-dry-run.sh                # ★ v1.5 新增：e2e 干跑
+    └── memory-roundtrip-test.sh      # ★ v1.5 新增：记忆闭环验证
+```
+
+### 15.6 v1.5 自检结果
+
+本次自检修复的 12 个缺陷对应 10 条反模式（见 `references/anti-patterns.md`）。系统性改进：
+
+- **SP-1 元验证缺失** → 新增 meta-verify.sh + 5 项检查
+- **SP-2 冷启动断层** → 新增 e2e-dry-run.sh
+- **SP-3 记忆闭环未验证** → 新增 memory-roundtrip-test.sh + MV-4 检查
+
+下次迭代（v1.6）计划见 `references/evolution-roadmap.md`。

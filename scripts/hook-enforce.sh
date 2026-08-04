@@ -40,10 +40,19 @@ case "$EVENT" in
       FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")
       CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // ""' 2>/dev/null || echo "")
 
-      # 检查文件长度（global-rules §二第6条）
+      # v1.5: 项目 rules 感知（D-8）
+      # 默认 500 行；若项目有 .claude/rules/ecc/ 用 800
+      LINE_LIMIT=500
+      if [ -n "$FILE_PATH" ]; then
+        PROJECT_ROOT=$(echo "$FILE_PATH" | sed -E 's@/src/.*@@; s@/tests/.*@@; s@/docs/.*@@')
+        if [ -d "$PROJECT_ROOT/.claude/rules/ecc" ] || [ -d "$HOME/.claude/rules/ecc" ]; then
+          LINE_LIMIT=800
+        fi
+      fi
+
       LINES=$(echo "$CONTENT" | wc -l | tr -d ' ')
-      if [ "$LINES" -gt 500 ]; then
-        echo "BLOCKED: 文件超过 500 行（$LINES 行），global-rules §二第6条。请拆分。" >&2
+      if [ "$LINES" -gt "$LINE_LIMIT" ]; then
+        echo "BLOCKED: 文件超过 ${LINE_LIMIT} 行（实际 $LINES 行），global-rules §二第6条。请拆分。" >&2
         exit 2
       fi
 
@@ -53,10 +62,11 @@ case "$EVENT" in
         exit 2
       fi
 
-      # 检查 secrets 硬编码（覆盖 SKILL.md §七 黑名单）
-      # sk- (Anthropic) / ghp_ (GitHub) / AKIA (AWS) / -----BEGIN (PEM) / api_key= 等
-      if echo "$CONTENT" | grep -qE "(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{30,}|AKIA[A-Z0-9]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|api_key\s*=\s*['\"][a-zA-Z0-9]{20,})"; then
-        echo "BLOCKED: 检测到疑似硬编码 secret（sk-/ghp_/AKIA/PEM/api_key），global-rules §五。请用环境变量。" >&2
+      # v1.5: 扩展 secret 正则（D-7）
+      # 覆盖: sk- (Anthropic) / ghp_ (GitHub) / glpat- (GitLab) / xoxb- (Slack) /
+      #       AKIA (AWS) / eyJ (JWT) / -----BEGIN PEM / api_key= / -----BEGIN OPENSSH PRIVATE KEY-----
+      if echo "$CONTENT" | grep -qE "(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{30,}|glpat-[a-zA-Z0-9_-]{20,}|xox[baprs]-[0-9a-zA-Z-]{10,}|AKIA[A-Z0-9]{16}|eyJ[a-zA-Z0-9_-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|api_key\s*=\s*['\"][a-zA-Z0-9]{20,})"; then
+        echo "BLOCKED: 检测到疑似硬编码 secret (sk-/ghp_/glpat-/xoxb-/AKIA/eyJ/PEM/api_key)，global-rules §五。请用环境变量。" >&2
         exit 2
       fi
 

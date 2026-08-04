@@ -36,7 +36,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex review` 或调 `code-reviewer` subagent |
+| Codex CLI | `codex review`（通用审查）或 spawn `code-reviewer` / `security-reviewer` subagent（专项）|
 | Gemini CLI | `gemini review` 或在 agent.json 配 reviewer 子 Agent |
 | Cursor | Cursor 的 AI Review 功能 |
 | Cline | `.clinerules` 里写审查规则 |
@@ -222,15 +222,15 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 | Claude Code | Codex | Gemini CLI | Cursor | Cline | Humus |
 |------------|------|-----------|--------|-------|-------|
 | `/review` | `codex review` | agent.json 配 reviewer | AI Review | `.clinerules` | 平台工具 |
-| `/security-review` | `codex review --focus security`（codex review 真实存在，security 是 focus 参数） | agent.json 配 security | AI Security | `.clinerules` | 平台工具 |
-| `/deep-reach` | `docs-lookup` subagent（codex 无 search 命令） | Gemini search | @codebase | `docs-lookup` | 平台工具 |
-| `/init` | 无（Codex 无 init 命令，手动建目录） | `gemini init` | 手动 | 手动 | 平台工具 |
-| `/plan` | 无（Codex 无 plan 命令，用 Plan subagent） | agent.json 配 Plan | AI Plan | `Plan` | 平台工具 |
-| `/tdd` | 无（Codex 无 test 命令，用 tdd-guide subagent） | agent.json 配 tdd | AI Test | `tdd-guide` | 平台工具 |
-| `/build-fix` | 无（Codex 无 build fix 命令，用 build-error-resolver） | agent.json 配 build-fix | AI Build Fix | `build-error-resolver` | 平台工具 |
+| `/security-review` | `codex review` + spawn `security-reviewer` subagent | agent.json 配 security | AI Security | `.clinerules` | 平台工具 |
+| `/deep-reach` | spawn `docs-lookup` subagent | Gemini search | @codebase | `docs-lookup` | 平台工具 |
+| `/init` | 手动建目录（Codex 无 init） | `gemini init` | 手动 | 手动 | 平台工具 |
+| `/plan` | spawn `Plan` subagent | agent.json 配 Plan | AI Plan | `Plan` | 平台工具 |
+| `/tdd` | spawn `tdd-guide` subagent | agent.json 配 tdd | AI Test | `tdd-guide` | 平台工具 |
+| `/build-fix` | spawn `build-error-resolver` subagent | agent.json 配 build-fix | AI Build Fix | `build-error-resolver` | 平台工具 |
 | `superpowers:*` | 人工提示词 | 人工提示词 | 人工提示词 | 人工提示词 | 人工提示词 |
 
-> **注意**：其他平台没有 SuperPower 子 Agent 时，把 `references/role-*.md` 作为系统提示词人工加载，用该平台的子 Agent 机制模拟。
+> **注意（v1.5 修订）**：Codex CLI 真实存在的子命令只有 `codex review` / `codex exec` / `codex mcp`（已 `codex --help` 验证）。其他平台没有 SuperPower 子 Agent 时，把 `references/role-*.md` 作为系统提示词人工加载，用该平台的子 Agent 机制模拟。
 
 ---
 

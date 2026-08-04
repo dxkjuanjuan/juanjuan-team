@@ -14,10 +14,11 @@ Agent 间通过写文件 + 轮询通信：
 <项目目录>/.msg/<from>_<to>_<phase>_<timestamp>.json
 ```
 
-格式：
+格式（v1.5 加 run_id 字段，见 `observability.md`）：
 ```json
 {
   "id": "<uuid>",
+  "run_id": "run-<phase>-<timestamp>-<rand4>",
   "from": "convener",
   "to": "architect",
   "phase": "Phase 4",
@@ -27,6 +28,8 @@ Agent 间通过写文件 + 轮询通信：
   "ack": false
 }
 ```
+
+> ⚠️ v1.5：`run_id` 必填（global-rules §二第 11 条）。无 run_id 视为 legacy 消息，元验证容错处理。
 
 ### 1.2 MCP 工具（如可用）
 
@@ -95,7 +98,7 @@ Convener 用 `SendMessage({ to: "agent-name", message: "..." })` 给 named agent
 { "ack": true, "timestamp": "<ISO 8601>" }
 ```
 
-### 3.2 超时阈值（按 Phase）
+### 3.2 超时阈值（v1.5: 以 fault-tolerance.md §二为准，本表仅速查）
 
 | Phase | 超时 |
 |-------|------|
@@ -104,6 +107,8 @@ Convener 用 `SendMessage({ to: "agent-name", message: "..." })` 给 named agent
 | Phase 4 三方审核 | 600s |
 | Phase 7 实施 | 1800s |
 | Phase 8 代码审查 | 600s |
+
+> ⚠️ v1.5：超时阈值的权威定义在 `fault-tolerance.md §二`，本表为速查用途。两处若不一致以 fault-tolerance.md 为准。
 
 ### 3.3 失联判定
 

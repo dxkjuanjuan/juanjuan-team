@@ -1,9 +1,12 @@
 #!/bin/bash
-# Juanjuan Team — 7 人 Agent spawn 脚本
+# Juanjuan Team — 7 人 Agent spawn 文档脚本（v1.5）
 # 用法: ./swarm-spawn.sh <项目目录> <模式>
 #
-# 通过 ruflo MCP 初始化 swarm + spawn 7 人 Agent
-# 注意: 本脚本只是文档化记录 spawn 顺序，实际执行由 convener 在 Claude Code 会话内通过 MCP 工具调用
+# ⚠️ 本脚本仅文档化 spawn 顺序与参数，不真正 spawn Agent。
+# 真实 spawn 由 convener 在 Claude Code 会话内通过 MCP 工具调用：
+#   mcp__claude-flow__swarm_init
+#   mcp__claude-flow__agent_spawn × 7
+# 本脚本的价值：作为 convener 调 MCP 时的参数清单参考，便于回溯调试。
 
 set -euo pipefail
 
@@ -111,8 +114,12 @@ case "$MODE" in
         echo "  Safe 模式: 每阶段都审核 + 卷卷确认"
         echo "  冲突处理: A (明显情况 Leader 定, 其他转卷卷)"
         ;;
+    manual)
+        echo "  Manual 模式: 团队只做头脑风暴辅助, 卷卷完全审核 (原 Normal, v1.4 改名)"
+        echo "  冲突处理: A (全转卷卷, reviewer 否决权降级为建议)"
+        ;;
     normal)
-        echo "  Normal 模式: 团队只做头脑风暴辅助, 卷卷完全审核"
+        echo "  [deprecated] Normal 模式: 同 Manual (向后兼容)"
         echo "  冲突处理: A (全转卷卷)"
         ;;
     auto)
@@ -124,7 +131,7 @@ case "$MODE" in
         echo "  冲突处理: C (hive-mind 共识投票, 多数派胜)"
         ;;
     *)
-        echo "  ERROR: 未知模式 $MODE (应为 safe/normal/auto/yolo)"
+        echo "  ERROR: 未知模式 $MODE (应为 safe/manual/auto/yolo, normal 为 deprecated alias)"
         exit 1
         ;;
 esac

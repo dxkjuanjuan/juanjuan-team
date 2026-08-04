@@ -125,12 +125,13 @@ agent 超时 →
 
 ## 五、Ruflo MCP 不可用的降级
 
-### 5.1 本地 JSON Fallback
+### 5.1 本地 JSON Fallback（v1.5 路径统一为 `~/.jaaos/memory.json`）
 
 Ruflo MCP 挂了（**流程继续不阻塞，不停止**——与 SKILL.md §十一错误处理表统一）：
 - Phase 0.5 查记忆 → 读 `~/.jaaos/memory.json`（本地 JSON 文件，无向量搜索，线性扫描）
 - Phase 10 存记忆 → 写 `~/.jaaos/memory.json`（追加，带 timestamp）
-- convener 提示卷卷「Ruflo MCP 不可用，已降级为本地 JSON 模式，向量搜索不可用」
+- convener 提示卷卷「Ruflo MCP 不可用，已降级为本地 JSON 模式 (`~/.jaaos/memory.json`)，向量搜索不可用」
+- ⚠️ v1.5：SKILL.md §十一已同步此路径，两处文档口径一致
 
 ### 5.2 Agent 间通信降级
 
