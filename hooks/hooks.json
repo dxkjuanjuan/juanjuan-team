@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/skills/juanjuan-team/scripts/hook-enforce.sh pre-tool-use",
+            "command": "bash ${CLAUDE_SKILL_DIR:-~/.claude/skills/juanjuan-team}/scripts/hook-enforce.sh pre-tool-use",
             "timeout": 10
           }
         ]
@@ -17,19 +17,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/skills/juanjuan-team/scripts/hook-enforce.sh subagent-start",
+            "command": "bash ${CLAUDE_SKILL_DIR:-~/.claude/skills/juanjuan-team}/scripts/hook-enforce.sh subagent-start",
             "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/skills/juanjuan-team/scripts/heartbeat-check.sh $CLAUDE_PROJECT_DIR 2>/dev/null || true",
-            "timeout": 5
           }
         ]
       }
