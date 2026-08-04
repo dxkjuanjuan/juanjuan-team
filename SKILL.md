@@ -1,6 +1,6 @@
 ---
 name: juanjuan-team
-description: 卷卷的多 Agent 团队协作工作流。当卷卷描述任务（含「做」「修」「写」「实现」「帮我」等动词 + 任务对象）时自动触发，或显式说「juanjuan skill」「用卷卷 skill」。先调 superpowers:brainstorming 头脑风暴澄清需求，再选模式（Safe/Normal/Auto/YOLO），然后建项目目录、跑 7 人 Agent 团队（leader/convener/architect/frontend/coder/reviewer/docs-researcher）、智能备份、存档记忆。核心价值是对抗式协作——多个 Agent 同步独立审核同一产出，互相挑错，避免单 Agent 认知连续性错误。**7 Agent 只是默认配置，可改 prompt/数量/理论框架，见 references/customization.md**。
+description: 多 Agent 对抗式协作工作流（juanjuan team）。当用户描述任务（含「做」「修」「写」「实现」「帮我」等动词 + 任务对象 + 复杂度信号）时自动触发，或显式说「juanjuan skill」「用卷卷 skill」「team up」「multi-agent」。先调 superpowers:brainstorming 头脑风暴澄清需求，再选模式（Safe/Manual/Auto/YOLO），然后建项目目录、跑 7 人 Agent 团队（leader/convener/architect/frontend/coder/reviewer/docs-researcher）、智能备份、存档记忆。核心价值是对抗式协作——多个 Agent 同步独立审核同一产出，互相挑错，避免单 Agent 认知连续性错误。**7 Agent 只是默认配置，可改 prompt/数量/理论框架，见 references/customization.md。单文件任务可走 Lite 模式（6 Phase），见 references/lite-mode.md**。
 ---
 
 # Juanjuan Team Skill
@@ -28,6 +28,8 @@ description: 卷卷的多 Agent 团队协作工作流。当卷卷描述任务（
 - `用自己的 skills`
 - `用 juanjuan team`
 - `上 ruflo team`
+- `team up`（通用）
+- `multi-agent`（通用）
 
 ### 1.3 不触发的场景
 
@@ -54,9 +56,11 @@ description: 卷卷的多 Agent 团队协作工作流。当卷卷描述任务（
 | 模式 | 行为 | 何时用 |
 |------|------|--------|
 | **Safe** | 默认全选最谨慎方案；每阶段都审核 + 卷卷确认 | 重要项目、不确定时 |
-| **Normal** | 团队只做头脑风暴式辅助，**完全由卷卷审核**，不替卷卷审核 | 卷卷完全掌控时 |
+| **Manual**（原 Normal） | 团队只做头脑风暴式辅助，**完全由卷卷审核**，reviewer 否决权降级为建议 | 卷卷完全掌控时（原 Normal 改名，避免「Normal=团队正常审」的语义歧义） |
 | **Auto** | 团队帮卷卷审核，遇到难抉择的转卷卷定夺 | 日常推荐 |
-| **YOLO** | 全权限放给团队，hive-mind 投票决策，最后给卷卷结果 | 信任团队、要快速出结果 |
+| **YOLO** | 全权限放给团队，hive-mind 投票决策，投票即审核，最后给卷卷结果 | 信任团队、要快速出结果 |
+
+> ⚠️ Normal 已改名 Manual（卷卷全审），避免命名歧义。原 Normal 触发词仍兼容。
 
 **模式选择时机（关键）**：必须在头脑风暴完成之后。流程顺序严格按 Phase 0 → Phase 1，不可颠倒。
 
@@ -71,20 +75,22 @@ description: 卷卷的多 Agent 团队协作工作流。当卷卷描述任务（
   ⚠️ brainstorming 完成后必须回到 juanjuan-team 流程进入 Phase 0.5/1
      （用 AskUserQuestion 选模式），不要继续走 brainstorming 的 design doc 流程
   ↓
-[Phase 0.5: 资料查询]  ← docs-researcher 主导，独立 Phase
+[Phase 0.5: 资料查询]  ← docs-researcher 主导，预取式并行（不是真并行）
   docs-researcher 调 memory_search（threshold=0.3, limit=5）+ kimi-webbridge
-  结果作为 Phase 1 模式选择的输入（如发现历史经验可建议特定模式）
-  与 Phase 0 头脑风暴并行（不在头脑风暴内嵌，避免职责混淆）
+  结果暂存 <项目>/.phase0.5-findings.json
+  Phase 0 brainstorming 完成后，convener 读暂存结果作为 Phase 1 输入
+  ⚠️ 预取式并行：Phase 0 开始时 docs-researcher 同步启动（只查不消费），结果暂存；Phase 0 完成后汇合
+  ⚠️ DAG 标注：async prefetch, barrier at Phase 1 entry
   ↓
 [Phase 1: 模式选择]  ← 必须在出方案之前！用 AskUserQuestion 卡片式选择
   Convener 基于 Phase 0.5 docs-researcher 的查询结果给建议
   用 AskUserQuestion 工具弹卡片：
-    - Safe / Normal / Auto / YOLO
+    - Safe / Manual / Auto / YOLO
     - 每个选项带 description + preview
   卷卷点选 → 进入对应模式
   ⚠️ 为什么先选模式：模式决定「谁来出方案 + 谁来审方案 + 卷卷是否要看」
      - Safe: 卷卷审每个方案
-     - Normal: 卷卷完全审（reviewer 否决权降级为建议）
+     - Manual: 卷卷完全审（reviewer 否决权降级为建议）
      - Auto: 团队审，难抉择转卷卷
      - YOLO: 团队投票即审核，放宽阈值
   ↓
@@ -94,11 +100,11 @@ description: 卷卷的多 Agent 团队协作工作流。当卷卷描述任务（
   ↓
 [Phase 3: 方案生成]  ← 按模式出方案
   Convener + Architect 出方案 A/B/C
-  ⚠️ 不管什么模式，方案必须让卷卷看到（Safe/Normal 详细看，Auto/YOLO 看摘要）
+  ⚠️ 不管什么模式，方案必须让卷卷看到（Safe/Manual 详细看，Auto/YOLO 看摘要）
   ⚠️ 卷卷可随时打断，决定是否修改方案
   ↓
 [Phase 4: 方案审核]（按模式，对抗式辩论协议）
-  Safe/Normal: Architect + Reviewer + Docs-Researcher 三方独立审（卷卷可看每方意见）
+  Safe/Manual: Architect + Reviewer + Docs-Researcher 三方独立审（卷卷可看每方意见）
   Auto: 同上 + Leader 自检介入（卷卷看汇总摘要）
   YOLO: 全权交团队投票（投票即审核，放宽阈值；卷卷看最终胜出方案）
   Convener 用加权评分公式汇总（详见 references/decision-engine.md）
@@ -113,7 +119,7 @@ description: 卷卷的多 Agent 团队协作工作流。当卷卷描述任务（
   ↓
 [Phase 6: 文档审核]（按模式）
   Safe/Auto/YOLO: Reviewer 单向审 docs-researcher 的文档（不是互审，docs-researcher 不审自己写的）
-  Normal: 跳过，卷卷直接审
+  Manual: 跳过，卷卷直接审
   ⚠️ Phase 6 改为 Reviewer 单向审（之前写「互审」有歧义）
   ↓
 [Phase 7: 实施]
@@ -181,7 +187,7 @@ description: 卷卷的多 Agent 团队协作工作流。当卷卷描述任务（
                        Phase 11 (汇报归档)
 ```
 
-**Phase 0 + 0.5 真并行**：Convener 跑 brainstorming 的同时，docs-researcher 查 memory（上图同层分叉表示并行，汇合后进 Phase 1）
+**Phase 0 + 0.5 预取式并行**：Convener 跑 brainstorming 的同时，docs-researcher 后台预取 memory（结果暂存 .phase0.5-findings.json，Phase 0 完成后汇合，不是真并行）
 **Phase 7 内并行**：frontend + coder（依赖 architect 接口契约先定义）
 **Phase 4/6/8 三方并行审核**：architect + reviewer + docs-researcher 独立审（global-rules §4.1）
 **不可跳过**：Phase 0（头脑风暴）、Phase 4（审核）、Phase 8（代码审查）
@@ -256,7 +262,7 @@ value: |
   最终方案: <选定的方案 + 关键决策>
   踩坑: <实施过程中遇到的问题 + 解决方法>
   团队配置: <本次实际用的 Agent 角色组合>
-  模式选择: <Safe/Normal/Auto/YOLO + 是否阶段性切换>
+  模式选择: <Safe/Manual/Auto/YOLO + 是否阶段性切换>
   项目路径: ~/项目/YYYY-MM-DD-HHmm-.../
 tags: [skill, juanjuan-team, <技术栈标签>]
 provenance_type: agent_output
@@ -268,7 +274,7 @@ provenance_type: agent_output
 ~/.claude/skills/juanjuan-team/
 ├── SKILL.md                          # 本文件（主入口）
 ├── references/
-│   ├── global-rules.md               # 全局共享规则（10 条硬约束 + 4 模式定义）
+│   ├── global-rules.md               # 全局共享规则（10 条硬约束 + 模式冲突处理）
 │   ├── role-leader.md                # 7 个角色完整 prompt
 │   ├── role-convener.md
 │   ├── role-architect.md
@@ -278,16 +284,20 @@ provenance_type: agent_output
 │   ├── role-docs-researcher.md
 │   ├── decision-engine.md            # 决策引擎（对抗式辩论 + 加权评分）
 │   ├── state-machine.md               # 任务状态机
-│   ├── skill-allocation.md           # ★ 角色技能分配矩阵（SuperPower + ECC skills 按角色分配）
-│   ├── agent-commands.md             # ★ Agent 命令规范（跨平台 Codex/Humus 兼容）
-│   ├── customization.md              # ★ 灵活配置指南（改 prompt/数量/理论）
+│   ├── skill-allocation.md           # 角色技能分配矩阵
+│   ├── agent-commands.md             # Agent 命令规范（跨平台兼容）
+│   ├── customization.md              # 灵活配置指南（改 prompt/数量/理论）
+│   ├── message-protocol.md           # ★ Agent 间通信协议（文件消息 + MCP + SendMessage）
+│   ├── fault-tolerance.md            # ★ 容错机制（convener 单点 + 失联 + 模式切换 + 并发隔离）
+│   ├── lite-mode.md                  # ★ Lite 模式（单文件任务走 6 Phase 精简流程）
 │   └── backup-script.sh               # 备份脚本
 └── scripts/
+    ├── install.sh                    # ★ 一键安装（clone + symlink 到 ~/.claude/skills/）
     ├── swarm-spawn.sh                 # 7 人 agent spawn 脚本
     └── backup-check.sh                # 备份触发条件检查
 ```
 
-★ = 本次新增
+★ = v1.3 新增
 
 ## 十、MCP 工具调用路径
 
@@ -307,7 +317,7 @@ provenance_type: agent_output
 
 | 场景 | 处理 |
 |------|------|
-| ruflo MCP 不可用 | convener 提示「MCP 未连接，请重启 Claude Code」并停止流程 |
+| ruflo MCP 不可用 | convener 提示「MCP 不可用，降级为本地 JSON 模式」（见 fault-tolerance.md §五），**流程继续不阻塞** |
 | 记忆库查询失败 | docs-researcher 报告「无历史经验」，继续流程 |
 | 备份失败（磁盘满） | convener 提示并询问是否清理旧备份或换位置 |
 | Agent 间无法达成共识 | Leader 自检 → 明显情况定夺，技术性选择转卷卷 |

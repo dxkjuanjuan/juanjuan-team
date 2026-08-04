@@ -27,21 +27,22 @@
 
 ## 三、4 种工作模式（详见 SKILL.md §三，此处只列模式与冲突处理对应）
 
-> 4 种模式（Safe/Normal/Auto/YOLO）的完整定义在 SKILL.md §三，避免重复维护。
+> 4 种模式（Safe/Manual/Auto/YOLO）的完整定义在 SKILL.md §三，避免重复维护。
+> ⚠️ Normal 已改名 Manual（卷卷全审），原 Normal 触发词仍兼容。
 
 ### 3.1 模式与冲突处理对应
 
 | 模式 | 冲突处理策略 |
 |------|--------------|
 | Safe | A（明显情况 Leader 定，其他转卷卷） |
-| Normal | A（全转卷卷，reviewer 否决权降级为建议） |
+| Manual（原 Normal） | A（全转卷卷，reviewer 否决权降级为建议） |
 | Auto | B（Leader 拍板，重大冲突才转卷卷） |
 | YOLO | C（hive-mind 共识投票，多数派胜；投票即审核，放宽阈值） |
 
 ### 3.2 模式可阶段性切换
 
-- 头脑风暴阶段用 Safe/Normal（要团队审核）
-- 设计文档阶段卷卷可说「这回我自己审」→ 切到 Normal
+- 头脑风暴阶段用 Safe/Manual（要团队审核）
+- 设计文档阶段卷卷可说「这回我自己审」→ 切到 Manual
 - 实施阶段切 Auto 或 YOLO
 
 ### 3.3 模式切换的回滚语义

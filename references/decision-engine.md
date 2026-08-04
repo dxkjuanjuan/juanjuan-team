@@ -88,7 +88,7 @@ reviewer 与 architect/coder/frontend 在产出质量上产生分歧时：
 ```
 reviewer 一票否决权
   ↓
-若 Safe/Normal 模式 → reviewer 否决即打回
+若 Safe/Manual 模式 → reviewer 否决即打回
 若 Auto 模式 → leader 仲裁
 若 YOLO 模式 → hive-mind 投票
 ```

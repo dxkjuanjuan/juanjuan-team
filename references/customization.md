@@ -148,7 +148,7 @@
 
 ### 4.4 改模式定义
 
-`references/global-rules.md` 现在是 Safe/Normal/Auto/YOLO。你可以：
+`references/global-rules.md` 现在是 Safe/Manual/Auto/YOLO。你可以：
 - 加 `Stealth`（静默模式，不汇报中间过程）
 - 加 `Pair`（双 Agent 配对模式）
 - 删 `YOLO`（不允许全自动）
