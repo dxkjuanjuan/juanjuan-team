@@ -71,31 +71,28 @@
 
 ## 第 5 分钟：第一次跑会发生什么？
 
-假设你说"帮我做一个待办清单 app"，流程：
+假设你说"帮我做一个待办清单 app"，流程（对应 SKILL.md 的 11 Phase + Phase 0.5）：
 
 ```
-1. convener 跟你确认需求（头脑风暴）
-   "你想要 Web 版还是手机版？数据存哪？"
-2. 你选模式
-   convener 弹卡片让你选 Safe/Manual/Auto/YOLO
-3. 团队建项目目录
-   ~/项目/2026-08-04-1430-待办清单-a3f2/
-4. architect 出 2-3 个方案
-   convener 给你看："方案 A/B/C 各有什么优劣"
-5. 三方独立审方案
-   architect + reviewer + docs-researcher 各自挑错（不看对方）
-6. convener 汇总给你
-   "推荐方案 B，理由是..."
-7. 写设计文档
-8. reviewer 审文档
-9. 前端+后端并行写代码
-10. reviewer 审代码（OWASP + 测试覆盖率）
-11. 自动备份
-12. 存经验到记忆库
-13. convener 给你最终汇报
+[Phase 0]   convener 跟你确认需求（头脑风暴）
+            "你想要 Web 版还是手机版？数据存哪？"
+[Phase 0.5] docs-researcher 后台查"以前做过类似的没"
+[Phase 1]   你选模式（Safe/Manual/Auto/YOLO）
+[Phase 2]   团队建项目目录 ~/项目/2026-08-04-1430-待办-a3f2/
+[Phase 3]   architect 出 2-3 个方案 A/B/C
+[Phase 4]   3 方独立审方案（architect + reviewer + docs-researcher 各自挑错）
+[Phase 5]   docs-researcher 写设计文档
+[Phase 6]   reviewer 审文档
+[Phase 7]   frontend + coder 并行写代码
+[Phase 8]   reviewer 审代码（OWASP + 测试覆盖率）
+[Phase 9]   智能备份（tar.gz + git bundle）
+[Phase 10]  存经验到 ruflo memory
+[Phase 11]  convener 给你最终汇报
 ```
 
-**全程你只需要在关键节点跟 convener 互动**，其他不用管。
+**v1.6 起 Phase 4/6/8 的审核是"主+sub 双层对抗"**：每个主 Agent 自己独立审 + 同时派 sub-agent 平行审，最后做共识/分歧/盲点三方综合。详见 `references/sub-agent-review.md`。
+
+**全程你只需要在 Phase 0、Phase 1、Phase 4 后跟 convener 互动**，其他不用管。
 
 ---
 

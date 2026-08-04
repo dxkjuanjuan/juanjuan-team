@@ -199,7 +199,12 @@ check_mv6() {
         status="fail"
         evidence="派了 sub-agent 但主 Agent 无 self finding（违反主 Agent 必须参与）"
     else
-        # 时间戳验证：主 Agent self 必须 ≤ sub-agent 调用 + 1s（平行产出）
+        # v1.7 修正时间戳逻辑:
+        # 正确语义: 主 Agent self 应先于或同时与 sub-agent 调用发起
+        # delta = sub_mt - self_mt
+        #   正值: sub 晚于 self (合规)
+        #   负值 >= -1: sub 比 self 早 1 秒内 (合规, 视为同时发起)
+        #   负值 < -1: sub 比 self 早超过 1 秒 (违规, 主 Agent 可能先看了 sub 才写自己 = 锚定效应)
         local earliest_sub=$(ls -t "$sub_calls_dir"/*Phase[468]_*.json 2>/dev/null | tail -1)
         local earliest_self=$(ls -t "$MSG_DIR"/*_self_Phase[468]_*.json 2>/dev/null | tail -1)
 
@@ -207,21 +212,43 @@ check_mv6() {
             local sub_mt=$(stat -f %m "$earliest_sub" 2>/dev/null || stat -c %Y "$earliest_sub" 2>/dev/null)
             local self_mt=$(stat -f %m "$earliest_self" 2>/dev/null || stat -c %Y "$earliest_self" 2>/dev/null)
             if [ -n "$sub_mt" ] && [ -n "$self_mt" ]; then
-                local delta=$((self_mt - sub_mt))
-                if [ "$delta" -le 1 ] && [ "$delta" -ge -60 ]; then
-                    # 检查 verdict 是否含 consensus/divergence/blind_spots 分类
-                    # 简化：检查任何 verdict 文件是否含这些字段
-                    local has_classification=$(grep -lE '"(consensus|divergence|blind_spots)"' "$MSG_DIR"/*Phase[468]*.json 2>/dev/null | wc -l | tr -d ' ')
-                    if [ "$has_classification" -ge 1 ]; then
-                        status="pass"
-                        evidence="sub-calls=$sub_call_count, self_findings=$self_findings, 时间差=${delta}s（平行产出）, finding 已分类"
-                    else
-                        status="fail"
-                        evidence="sub/self 都有但 verdict 未分类（缺 consensus/divergence/blind_spots）"
-                    fi
-                else
+                local delta=$((sub_mt - self_mt))
+                local anchor_risk=false
+                if [ "$delta" -lt -1 ]; then
+                    anchor_risk=true
+                fi
+
+                # 检查 verdict 是否含 consensus/divergence/blind_spots 分类
+                local has_classification=$(grep -lE '"(consensus|divergence|blind_spots)"' "$MSG_DIR"/*Phase[468]*.json 2>/dev/null | wc -l | tr -d ' ')
+
+                # v1.7 新增: 检查 blind_spots 的 acknowledgement 字段内容规范性
+                # 必须含 "我漏了" / "我遗漏了" / "主 Agent 漏" 等明示语
+                local blind_spot_ok=true
+                local blind_check_msg=""
+                if command -v jq >/dev/null 2>&1; then
+                    for vf in "$MSG_DIR"/*Phase[468]*.json; do
+                        [ -f "$vf" ] || continue
+                        local bad_ack=$(jq -r '.blind_spots[]? | select((.acknowledgement // "") | test("我漏了|我遗漏了|主 Agent 漏|主Agent漏") | not) | .issue // "unknown"' "$vf" 2>/dev/null | head -3)
+                        if [ -n "$bad_ack" ]; then
+                            blind_spot_ok=false
+                            blind_check_msg="盲点 acknowledgement 不规范: $bad_ack"
+                            break
+                        fi
+                    done
+                fi
+
+                if [ "$anchor_risk" = "true" ]; then
                     status="fail"
-                    evidence="主 Agent self 与 sub-agent 时间差 ${delta}s（>1s 可能锚定效应）"
+                    evidence="主 Agent self 晚于 sub-agent 调用 ${delta}s（可能锚定效应，先看 sub 才写自己）"
+                elif [ "$has_classification" -lt 1 ]; then
+                    status="fail"
+                    evidence="sub/self 都有但 verdict 未分类（缺 consensus/divergence/blind_spots）"
+                elif [ "$blind_spot_ok" = "false" ]; then
+                    status="fail"
+                    evidence="$blind_check_msg"
+                else
+                    status="pass"
+                    evidence="sub-calls=$sub_call_count, self_findings=$self_findings, delta=${delta}s（无锚定）, finding 已分类, 盲点披露规范"
                 fi
             else
                 status="skip"

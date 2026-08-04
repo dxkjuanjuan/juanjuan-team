@@ -464,3 +464,27 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 - 新增 5 条反模式（AP-13~17：形式主义 / 串行 / 汇总员 / 悄悄采纳 / 锚定）
 - 新增 docs/ 目录（小白指南 + 非技术用户指南）
 - README 顶部加快速入门链接
+
+### 15.8 v1.7 自审查与修复
+
+对 v1.6 自审发现 12 个缺陷（V16-1 ~ V16-12），全部修复：
+
+**critical/major**:
+- V16-1 sub-agent 数量爆炸未设上限 → 加 §11 复杂度感知配置（Lite/Medium/Complex 三档）
+- V16-2 MV-6 时间戳逻辑 bug → 修正为 `sub_started_at - self_started_at >= -1`，并加 anchor_risk 检查
+- V16-3 sub-agent 失败 fallback 路径不明 → §8 三层失败场景（sub 失败 / 主失败 / 都失败）
+- V16-4 盲点披露无强制字段 → §2 第 4 条规范 acknowledgement 必须含"我漏了"等关键词，MV-6 检查
+- V16-5 共识/分歧判定标准模糊 → §2.1 issue 粒度规范（文件+函数+类别三要素对齐）
+- V16-6 sub-agent 能否 spawn 子 sub-agent → §2 第 9 条硬规则禁止，AP-18 反模式
+
+**minor**:
+- V16-7 leader 的 sub-agent 形同虚设 → 移除，改为 architect peer review，AP-19 反模式
+- V16-8 getting-started.md 13 步与 SKILL.md 11 Phase 不一致 → 重写对齐到 11+0.5
+- V16-9 AP-17 时间戳描述过严 → 修正语义为发起时间差
+- V16-10 sub-agent token 无监控 → §4 sub-call 加 token_used 字段
+- V16-11 for-non-developers.md 没提 sub-agent → 加"v1.6 新增：双层对抗"章节
+- V16-12 hermes-studio run_id 启发未完整 → §5 加 tool_call_id 字段（借鉴 hermes-studio 配对机制）
+
+**v1.7 反模式新增**: AP-18（sub-agent 无限生长）+ AP-19（leader sub-agent 形同虚设）
+
+**v1.7 元验证增强**: MV-6 检查 acknowledgement 字段内容规范性 + anchor_risk 修正

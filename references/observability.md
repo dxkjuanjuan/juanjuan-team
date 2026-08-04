@@ -157,12 +157,13 @@ run_id 出现在以下位置：
 
 ## 五、消息字段扩展
 
-`.msg/*.json` 文件在原有字段基础上加 `run_id`：
+`.msg/*.json` 文件在原有字段基础上加 `run_id`（v1.5）和 `tool_call_id`（v1.7）：
 
 ```json
 {
   "id": "<uuid>",
   "run_id": "run-4-20260804-1435-b1c2",
+  "tool_call_id": "tc-4-20260804-1435-b1c2-001",
   "from": "convener",
   "to": "architect",
   "phase": "Phase 4",
@@ -173,7 +174,35 @@ run_id 出现在以下位置：
 }
 ```
 
-`run_id` 必填。无 run_id 的消息视为 legacy，元验证容错处理。
+- `run_id` 必填（v1.5，global-rules §二第 11 条）
+- `tool_call_id` 选填（v1.7 新增）：当 payload 含工具调用（如 reviewer 调 /review、coder 调 build-error-resolver）时，每次调用产生一个 `tool_call_id`，绑定 call + result
+
+### 5.1 tool_call_id 规范（v1.7 新增）
+
+**格式**：`tc-<phase>-<timestamp>-<rand4>-<seq3>`
+
+例：`tc-8-20260804-1500-c4d5-001`
+
+- `phase`：Phase 编号
+- `timestamp`：本地时间戳，分钟级
+- `rand4`：4 位随机十六进制（与 run_id 对齐）
+- `seq3`：同一 run 内的工具调用序号（001/002/003...）
+
+**绑定关系**（借鉴 hermes-studio 的 `tool_call_id` 配对 call + result 机制）：
+- 工具调用消息：`type: "request", payload.tool_call_id`
+- 工具结果消息：`type: "response", payload.tool_call_id`（与调用同 id）
+- 元验证可基于 tool_call_id 验证调用与结果配对完整
+
+### 5.2 与 hermes-studio 的对比
+
+| 维度 | hermes-studio | juanjuan-team v1.7 |
+|------|---------------|---------------------|
+| run_id 粒度 | 每 agent reply 一个 | 每 Phase 一个 |
+| tool_call_id | 每 agent reply 绑定 | 每次工具调用绑定 |
+| 绑定内容 | assistant parts + tool rows | 消息 + 产出物 + 工具调用+结果 |
+| 持久化 | DB 表 | JSON 文件 |
+| summary 触发 | human-turn interval | Phase 结束 |
+| summary 更新者 | bare isolated Ekko agent | docs-researcher |
 
 ---
 

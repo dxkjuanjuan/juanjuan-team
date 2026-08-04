@@ -193,12 +193,26 @@
 **影响**：无法追溯主 Agent 的盲点模式，下次还会漏。
 **修复**：MV-6 检查 `blind_spots` 若非空，每条必须有 `acknowledgement` 字段。
 
-### AP-17 锚定效应
+### AP-17 锚定效应（v1.7 修正时间戳语义）
 
 **症状**：主 Agent 先看 sub-agent 的 finding 再写自己的，被 sub-agent 误导。
 **根因**：主 Agent 想图省事，"看看 sub 怎么说我再写"。
 **影响**：主 Agent 失去独立性，等于 1 个判断 + 复读，不是双层对抗。
-**修复**：MV-6 时间戳验证，主 Agent self finding 必须 ≤ sub-agent 调用 + 1s（证明是平行发起）。
+**修复**：MV-6 时间戳验证，正确语义是 `sub_started_at - self_started_at >= -1`（sub 可以比 self 晚任意时间，但不能比 self 早超过 1 秒）。若 sub 比 self 早超过 1 秒，说明主 Agent 可能先看了 sub 才写自己 → 锚定风险，标记 fail。
+
+### AP-18 sub-agent 无限生长（v1.7 新增）
+
+**症状**：sub-agent 再 spawn 自己的 sub-sub-agent，形成树形结构。
+**根因**：sub-agent prompt 没限制，自己又派了助手。
+**影响**：token 消耗指数级爆炸。
+**修复**：sub-agent-review.md §二第 9 条硬规则：sub-agent 不能再 spawn 子 sub-agent，sub-agent 是审核终端节点。
+
+### AP-19 leader sub-agent 形同虚设（v1.7 新增）
+
+**症状**：v1.6 给 leader 配了 1 个 sub-agent "审 leader 拍脑袋"，但 leader 不做产出、内部推理拿不到，sub-agent 信号很弱。
+**根因**：硬给所有主 Agent 都配 sub-agent，没考虑 leader 是否合适。
+**影响**：浪费 1 个 sub-agent 配额，没产出。
+**修复**：v1.7 移除 leader 的 sub-agent，改为 architect 做 leader 裁决的 peer review（不算 sub-agent）。
 
 ---
 
