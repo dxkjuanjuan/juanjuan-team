@@ -290,6 +290,7 @@ provenance_type: agent_output
 │   ├── message-protocol.md           # ★ Agent 间通信协议（文件消息 + MCP + SendMessage）
 │   ├── fault-tolerance.md            # ★ 容错机制（convener 单点 + 失联 + 模式切换 + 并发隔离）
 │   ├── lite-mode.md                  # ★ Lite 模式（单文件任务走 6 Phase 精简流程）
+│   ├── domain-checklists.md          # ★ 9 信号组 + 领域 checklist + 反群体思维 + HTML 报告（可选）
 │   └── backup-script.sh               # 备份脚本
 └── scripts/
     ├── install.sh                    # ★ 一键安装（clone + symlink 到 ~/.claude/skills/）
