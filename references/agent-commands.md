@@ -52,7 +52,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex search` 或 `docs-lookup` subagent |
+| Codex CLI | `docs-lookup` subagent（codex 无 search 命令） 或 `docs-lookup` subagent |
 | Gemini CLI | Gemini 的搜索工具 + `docs-lookup` |
 | Cursor | Cursor 的 @codebase 搜索 |
 | Cline | 配置 `docs-lookup` subagent |
@@ -68,7 +68,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex test` 或调 `tdd-guide` subagent |
+| Codex CLI | 无（Codex 无 test 命令，用 tdd-guide subagent） 或调 `tdd-guide` subagent |
 | Gemini CLI | 在 agent.json 配 tdd-guide 子 Agent |
 | Cursor | Cursor 的 AI Test 功能 |
 | Cline | 配置 `tdd-guide` subagent |
@@ -83,7 +83,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex brainstorm` 或人工用 superpowers 提示词 |
+| Codex CLI | 无（Codex 无 brainstorm 命令，手动调 superpowers 提示词） 或人工用 superpowers 提示词 |
 | Gemini CLI | 在 agent.json 配 brainstorming 子 Agent |
 | Cursor | 手动调 brainstorming skill |
 | Cline | 配置 `brainstorming` subagent |
@@ -98,7 +98,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex plan` 或调 `Plan` subagent |
+| Codex CLI | 无（Codex 无 plan 命令，用 Plan subagent） 或调 `Plan` subagent |
 | Gemini CLI | 在 agent.json 配 Plan 子 Agent |
 | Cursor | Cursor 的 AI Plan 功能 |
 | Cline | 配置 `Plan` subagent |
@@ -113,7 +113,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex build fix` 或调 build-error-resolver |
+| Codex CLI | 无（Codex 无 build fix 命令，用 build-error-resolver） 或调 build-error-resolver |
 | Gemini CLI | 在 agent.json 配 build-error-resolver |
 | Cursor | Cursor 的 AI Build Fix 功能 |
 | Cline | 配置 `build-error-resolver` subagent |
@@ -128,7 +128,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex verify` 或人工跑测试 |
+| Codex CLI | 无（Codex 无 verify 命令，人工跑测试） 或人工跑测试 |
 | Gemini CLI | 在 agent.json 配 verify 子 Agent |
 | Cursor | Cursor 的 AI Verify 功能 |
 | Cline | 配置 `verification-quality` subagent |
@@ -143,7 +143,7 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 **跨平台等价**：
 | 平台 | 等价命令 |
 |------|---------|
-| Codex CLI | `codex init` |
+| Codex CLI | 无（Codex 无 init 命令，手动建目录） |
 | Gemini CLI | `gemini init` |
 | Cursor | 手动建目录 + git init |
 | Cline | 手动建目录 + git init |
@@ -222,12 +222,28 @@ Codex / Humus / Gemini CLI / Cursor / Cline 没有 Claude Code 的内置命令�
 | Claude Code | Codex | Gemini CLI | Cursor | Cline | Humus |
 |------------|------|-----------|--------|-------|-------|
 | `/review` | `codex review` | agent.json 配 reviewer | AI Review | `.clinerules` | 平台工具 |
-| `/security-review` | `codex security` | agent.json 配 security | AI Security | `.clinerules` | 平台工具 |
-| `/deep-reach` | `codex search` | Gemini search | @codebase | `docs-lookup` | 平台工具 |
-| `/init` | `codex init` | `gemini init` | 手动 | 手动 | 平台工具 |
-| `/plan` | `codex plan` | agent.json 配 Plan | AI Plan | `Plan` | 平台工具 |
-| `/tdd` | `codex test` | agent.json 配 tdd | AI Test | `tdd-guide` | 平台工具 |
-| `/build-fix` | `codex build fix` | agent.json 配 build-fix | AI Build Fix | `build-error-resolver` | 平台工具 |
+| `/security-review` | `codex review --focus security`（codex review 真实存在，security 是 focus 参数） | agent.json 配 security | AI Security | `.clinerules` | 平台工具 |
+| `/deep-reach` | `docs-lookup` subagent（codex 无 search 命令） | Gemini search | @codebase | `docs-lookup` | 平台工具 |
+| `/init` | 无（Codex 无 init 命令，手动建目录） | `gemini init` | 手动 | 手动 | 平台工具 |
+| `/plan` | 无（Codex 无 plan 命令，用 Plan subagent） | agent.json 配 Plan | AI Plan | `Plan` | 平台工具 |
+| `/tdd` | 无（Codex 无 test 命令，用 tdd-guide subagent） | agent.json 配 tdd | AI Test | `tdd-guide` | 平台工具 |
+| `/build-fix` | 无（Codex 无 build fix 命令，用 build-error-resolver） | agent.json 配 build-fix | AI Build Fix | `build-error-resolver` | 平台工具 |
 | `superpowers:*` | 人工提示词 | 人工提示词 | 人工提示词 | 人工提示词 | 人工提示词 |
 
 > **注意**：其他平台没有 SuperPower 子 Agent 时，把 `references/role-*.md` 作为系统提示词人工加载，用该平台的子 Agent 机制模拟。
+
+---
+
+## 六、真实命令验证状态（2026-08-04 验证）
+
+| 命令 | 状态 | 验证方式 |
+|------|------|---------|
+| `codex review` | ✅ 真实存在 | `codex --help` 显示 review 子命令 |
+| `codex exec` | ✅ 真实存在 | `codex --help` 显示 exec 子命令 |
+| `codex mcp` | ✅ 真实存在 | `codex --help` 显示 mcp 子命令 |
+| `codex security` / `codex search` / `codex init` / `codex plan` / `codex test` / `codex build fix` / `codex brainstorm` / `codex verify` | ❌ 不存在 | Codex CLI 无这些子命令 |
+| `gemini` (Gemini CLI) | ⚠️ 未安装 | 本机未安装，无法验证 |
+| `cursor` CLI | ❌ 不存在 | Cursor 无 CLI（只有 GUI） |
+| `claude` CLI | ✅ 真实存在 | `claude --help` 验证，支持 `claude -p` headless 模式 |
+
+> ⚠️ 跨平台兼容策略：Codex 用 `codex review` + subagent fallback；Gemini CLI 需用户自行安装验证；Cursor 无 CLI，只能用 GUI + 手动加载 role-*.md 作为系统提示词。
