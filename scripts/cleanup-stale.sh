@@ -77,7 +77,7 @@ case "$IN_PROGRESS_AGENT" in
         ;;
 
     convener)
-        echo "  convener 在跑 Phase $IN_PROGRESS_PHASE，无需清理"
+        echo "  convener 在跑 Phase $IN_PROGRESS_PHASE，无需清理（convener 是主会话，断电后手动续跑）"
         ;;
 
     *)

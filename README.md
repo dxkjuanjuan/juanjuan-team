@@ -1,19 +1,24 @@
 # 🌀 卷卷团队 (Juanjuan Team)
 
-**Claude Code 首个对抗式协作多 Agent Skill —— 专为解决单 Agent 认知连续性错误而构建。**
+**Claude Code 首个对抗式协作多 Agent Skill -- 真 7 个独立 Claude 进程互审，让错误在卷卷看到之前就被拦截。**
 
-> 别再让一个 LLM 同时负责设计、实现和审查自己的工作。卷卷团队派出 7 个专业 Agent，独立分析、辩论、审计每一个产出——让错误在你看到之前就被拦截。
+> 别再让一个 LLM 同时负责设计、实现和审查自己的工作。卷卷团队派出 **7 个独立 Claude 进程**（claude -p 真进程，PPID=1），每个有自己的 context、看不到对方私有推理，独立挑错--单 Agent 自我背书的认知连续性错误从此不可能。
+
+🔥 **v2.2 里程碑**: 真 7-Agent 完整 11 Phase 流程跑通。**9 个真 claude -p 进程**累计跑过 URL 短链接项目，reviewer 独立挑出 architect 漏的 2 个 critical（SSRF + 权限错乱），leader 做有条件批准裁决，sub-agent team 真派发（typescript-reviewer + security-reviewer 发现 31 issues）。
 
 📚 **快速入门**:
-- 🆕 **什么都不懂？** → [`docs/for-non-developers.md`](docs/for-non-developers.md)（大白话指南，零代码）
-- ⚡ **5 分钟上手** → [`docs/getting-started.md`](docs/getting-started.md)
-- 📖 **完整文档** → 本 README
-- 🔬 **v1.5 自检+进化记录** → `~/docs/superpowers/specs/2026-08-04-juanjuan-team-self-audit-design.md`
+- 🆕 **什么都不懂？** -> [`docs/for-non-developers.md`](docs/for-non-developers.md)（大白话指南，零代码）
+- ⚡ **5 分钟上手** -> [`docs/getting-started.md`](docs/getting-started.md)
+- 🔬 **v2.2 真 7-Agent 验证** -> URL 短链接项目（6 真 claude -p 进程 + 完整 11 Phase + sub-agent 派发）
+- 🛡️ **防断联机制** -> [`references/v2.2-resilience.md`](references/v2.2-resilience.md)
+- 📁 **项目命名聚合** -> [`references/v2.2-project-naming.md`](references/v2.2-project-naming.md)
+- 📖 **完整文档** -> 本 README
 
 [![License: Personal Use](https://img.shields.io/badge/License-Personal%20Use-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://claude.com/claude-code)
-[![Status: v1.6](https://img.shields.io/badge/status-v1.6%20beta-brightgreen)](#)
+[![Status: v2.2](https://img.shields.io/badge/status-v2.2%20stable-brightgreen)](#)
 [![Min Claude Code](https://img.shields.io/badge/Min%20Claude%20Code-2.0%2B-orange)](#)
+[![Real Process](https://img.shields.io/badge/claude--p-real%20process%20(PPID%3D1)-red)](#)
 
 🌐 **语言:** **中文** | [English](README.en.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
 
