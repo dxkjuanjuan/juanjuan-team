@@ -1,12 +1,13 @@
 ---
 name: juanjuan-team
-description: 多 Agent 对抗式协作工作流（juanjuan team）。当用户描述任务（含「做」「修」「写」「实现」「帮我」等动词 + 任务对象 + 复杂度信号）时自动触发，或显式说「juanjuan skill」「用卷卷 skill」「team up」「multi-agent」。先调 superpowers:brainstorming 头脑风暴澄清需求，再选模式（Safe/Manual/Auto/YOLO），然后建项目目录、跑 7 人 Agent 团队（leader/convener/architect/frontend/coder/reviewer/docs-researcher）、智能备份、存档记忆。核心价值是对抗式协作——多个 Agent 同步独立审核同一产出，互相挑错，避免单 Agent 认知连续性错误。**v1.6 新增：主+sub 双层对抗——每个主 Agent 必须自己独立审 + 同时派 sub-agent 平行审，最后做共识/分歧/盲点三方综合，见 references/sub-agent-review.md。7 Agent 只是默认配置，可改 prompt/数量/理论框架，见 references/customization.md。单文件任务可走 Lite 模式（6 Phase），见 references/lite-mode.md**。
+description: 多 Agent 对抗式协作工作流（juanjuan team）。当用户描述任务（含「做」「修」「写」「实现」「帮我」等动词 + 任务对象 + 复杂度信号）时自动触发，或显式说「juanjuan skill」「用卷卷 skill」「team up」「multi-agent」。先调 superpowers:brainstorming 头脑风暴澄清需求，再选模式（Safe/Manual/Auto/YOLO），然后建项目目录、跑 7 人 Agent 团队（leader/convener/architect/frontend/coder/reviewer/docs-researcher）、智能备份、存档记忆。核心价值是对抗式协作——多个 Agent 同步独立审核同一产出，互相挑错，避免单 Agent 认知连续性错误。**v1.6 新增：主+sub 双层对抗——每个主 Agent 必须自己独立审 + 同时派 sub-agent 平行审，最后做共识/分歧/盲点三方综合，见 references/sub-agent-review.md。7 Agent 只是默认配置，可改 prompt/数量/理论框架，见 references/customization.md。单文件任务可走 Lite 模式（6 Phase），见 references/lite-mode.md**。**v1.8 新增：真 spawn 落地——3 个独立 Agent（convener+architect+reviewer）跑 MVP 流程，验证对抗式协作真的发生了，见 §十六**。
 ---
 
 # Juanjuan Team Skill
 
 > **Juanjuan Team** — Claude Code 首个对抗式协作多 Agent Skill。
 > 7 个 Agent + 11 Phase + 4 模式 + 主+sub 双层对抗审核（v1.6）。
+> **v1.8 MVP：3 个独立 Agent 真 spawn 落地**（convener + architect + reviewer），验证对抗式协作真的发生了。
 > 让"对抗式协作"从口头规则变成可验证的工程化机制。
 
 ## 一、触发方式
@@ -488,3 +489,139 @@ Agent({ description: "reviewer 审 <目标>", prompt: "<reviewer 角色 prompt +
 **v1.7 反模式新增**: AP-18（sub-agent 无限生长）+ AP-19（leader sub-agent 形同虚设）
 
 **v1.7 元验证增强**: MV-6 检查 acknowledgement 字段内容规范性 + anchor_risk 修正
+
+## 十六、v1.8 MVP：真 spawn 落地
+
+### 16.1 背景
+
+v1.0~v1.7 全是"剧本版"——Claude 一个人扮演 7 个角色，没有真 spawn 过独立 Agent。v1.8 做 MVP：真 spawn 3 个独立 Agent（convener + architect + reviewer），跑一个小任务，验证对抗式协作真的发生了。
+
+### 16.2 关键认知（Claude 纠偏）
+
+**Skill 是 markdown 指令文件，不是代码项目。** 没有 spawn 的 JS/bash API 给你调用。Skill 能做的是：
+1. 在 `~/.claude/agents/juanjuan-*.md` 定义角色文件（带 YAML frontmatter）
+2. 在 SKILL.md / role-convener.md 里写自然语言指令："Phase 2 时，convener 调用 Agent 工具，subagent_type 填 juanjuan-architect，prompt 参数填入..."
+3. Claude 扮演 convener 时，读到这条指令，自己会去调用 Agent 工具——调用发生在 Claude Code 运行时内部
+
+### 16.3 v1.8 Agent 定义文件（不是字符串拼接）
+
+3 个独立文件（v1.9 扩到 7 个）：
+
+| 文件 | 角色 | 由谁 spawn |
+|------|------|-----------|
+| `~/.claude/agents/juanjuan-convener.md` | convener（主会话） | 卷卷启动 skill 时自动 |
+| `~/.claude/agents/juanjuan-architect.md` | architect | convener 在 Phase 2 spawn |
+| `~/.claude/agents/juanjuan-reviewer.md` | reviewer | convener 在 Phase 3 spawn |
+
+每个文件 YAML frontmatter（name/description/tools/model）+ 正文（role 完整定义）。
+
+### 16.4 v1.8 MVP 6 Phase 流程（不是 11 Phase）
+
+```
+[Phase 0] 需求 — convener 跟卷卷对话，整理到 .shared/requirements.md
+  ↓
+[Phase 1] 建上下文目录 — 见 §16.5 目录协议
+  ↓
+[Phase 2] spawn architect — convener 调 Agent 工具，architect 产 design.md + reasoning.md
+  ↓
+[Phase 3] spawn reviewer 盲审 — convener 调 Agent 工具，reviewer 只读 design.md，产 review.json
+  ↓
+[Phase 4] 综合决策 — convener 读 design.md + review.json，写 decision.md
+  ↓
+[Phase 5] audit — convener 调 Agent 工具 spawn audit-agent，产 audit-report.md
+```
+
+### 16.5 目录协议
+
+每个 v1.8 任务在 `~/项目/YYYY-MM-DD-HHmm-<任务简述>-<rand4>/` 下建：
+
+```
+.shared/
+  requirements.md              # convener 整理卷卷需求
+.architect/
+  public/
+    design.md                  # architect 公开决策 + 一句话技术理由
+  private/
+    reasoning.md               # architect 私有推理（reviewer 绝对不能读）
+.reviewer/
+  reviews/
+    design-review.json         # reviewer 盲审产出
+.convener/
+  decision.md                  # convener 综合决策
+.audit/
+  events.jsonl                 # 每次 spawn 都追加一行（schema 见 references/audit-event-schema.md）
+  audit-report.md              # Phase 5 audit-agent 产出
+```
+
+### 16.6 盲审硬约束（最核心）
+
+spawn reviewer 时，convener 必须：
+- ✅ allowed_files: `.shared/requirements.md` + `.architect/public/design.md`
+- ❌ forbidden_files: `.architect/private/reasoning.md`
+
+reviewer 的 prompt 里**绝对不能**出现 reasoning.md 的任何原文片段。事后审计通过 `.audit/events.jsonl` 的 `prompt_full` 字段检查（schema 见 `references/audit-event-schema.md`）。
+
+### 16.7 design.md 内容规范
+
+允许「结论 + 一句话技术理由」：
+- ✅ 「采用 PostgreSQL，因为事务一致性保证任务状态更新」
+- ✅ 「API 用 RESTful 风格，符合卷卷现有技术栈」
+
+禁止策略性语言：
+- ❌ 「一开始考虑 MongoDB，但怕 reviewer 攻击，所以选 PostgreSQL」
+- ❌ 「对比过 X 方案，放弃了，因为……」
+- ❌ 「担心 reviewer 会……」
+
+**判断标准**：只允许陈述"选了什么 + 为什么这个技术特性匹配需求"，禁止提及"还考虑过什么别的选项、为什么没选、对 reviewer 的预测"。
+
+检测到策略性语言：**打回给 architect 重写**（不是 convener 清洗，避免污染链前移），最多 2 次。
+
+### 16.8 Spawn 顺序（不并行）
+
+```
+Step 1: convener 存在（主会话）
+Step 2: spawn architect → 产 design.md + reasoning.md
+Step 3: spawn reviewer → 读 design.md 产 review.json
+Step 4: convener 综合 → decision.md
+Step 5: spawn audit-agent → audit-report.md
+```
+
+v1.8 验证的是**隔离**，不是并行。并行留给 v1.9。
+
+### 16.9 v1.8 不做（YAGNI）
+
+- 不做 7 Agent（v1.9）
+- 不做 sub-agent（v1.9）
+- 不做对话模式辩论（v1.9）
+- 不做 leader 独立角色（convener 兼任）
+- 不做跨平台抽象（v1.9）
+- 不做 11 Phase（v1.8 用 6 Phase MVP）
+- 不做成本统计（v1.9）
+
+### 16.10 验收标准
+
+v1.8 跑成功的标志（4 条都要满足）：
+
+1. **独立 Agent 真被调用**：`.audit/events.jsonl` 有 architect 和 reviewer 各 1 条 spawn 事件 + 各 1 条 complete 事件
+2. **信息隔离成立**：reviewer 的 spawn prompt_full 里不含 reasoning.md 的任何 50+ 字符原文片段
+3. **reviewer 发现真问题**：review.json 里至少 1 个 issue 是 architect 漏掉的真实问题（不是凑数）
+4. **convener 综合决策**：decision.md 明示采纳了哪些 reviewer 意见、不采纳哪些、理由
+
+### 16.11 v1.8 Commit 路线
+
+- **Commit 0**（本次）：目录协议 + 3 个 agent 定义文件 + audit-event schema ✓
+- **Commit 1**：真 spawn 跑 TODO list 数据结构设计任务
+- **Commit 2**：生成 audit-report.md，验收 4 条标准
+
+### 16.12 v1.9 优先级（v1.8 跑通后再做）
+
+1. 扩到 7 Agent（加 leader/coder/frontend/docs-researcher）
+2. 加 sub-agent（每个主 Agent 派 sub）
+3. token 调度（模型分层）
+4. 跨平台抽象层（最后做）
+
+### 16.13 最终成功标准（v1.9+）
+
+**不**追求"7 人团队"，**只**追求："3 个 Agent 真的比 1 个 Agent 可靠"。
+
+v1.8 先证明机制能跑通、隔离是真的。统计对比（跑 10 个任务看错误率差异）留到 v1.9 有了稳定 3-Agent 版本之后再做。
