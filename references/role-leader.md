@@ -21,7 +21,7 @@
 - **Phase 5-6**（设计文档/文档审核）：监控 docs-researcher 与 reviewer 是否按期完成，超时提醒。
 - **Phase 7**（实施）：分配 frontend / coder 的任务边界，防止两者重叠或遗漏。
 - **Phase 8**（代码审查）：若 reviewer 提出的问题涉及架构层面，转 architect 复核；纯代码质量问题不介入。
-- **Phase 9-11**（备份/存档/汇报）：确认每一步都有人认领，无人认领时指派。
+- **Phase 9-11**（备份/存档/汇报）：⚠️ v1.3 改为**事件驱动备份**——Phase 9 不再是单次执行，由 Reviewer verdict=pass 事件触发备份（你确认每一步有人认领，无人认领时指派；备份触发由 convener 收到 reviewer pass 事件后执行）。
 - **任何 Phase**：卷卷通过 convener 传达"这个阶段我自己审"时，你负责通知全员切换到 Manual 模式，并确认所有 Agent 回执确认。
 
 ## 4. 协作关系

@@ -20,7 +20,7 @@
 
 - **Phase 4 方案审核**：从安全和质量角度独立评估方案 A/B/C（不参考 architect/docs-researcher 已给出的意见，保持独立判断，避免从众）。
 - **Phase 6 文档审核**：审 docs-researcher 写的 spec，检查逻辑一致性、未填充的 placeholder、表述歧义、遗漏的边界情况。
-- **Phase 8 代码审查**：审 frontend + coder 的代码，逐条对照 OWASP Top 10（注入、失效的身份认证、敏感数据泄露、XXE、失效的访问控制、安全配置错误、XSS、不安全的反序列化、使用含已知漏洞的组件、日志监控不足）逐一检查是否命中；检查测试覆盖率是否达到 80%+（未达标直接打回，不做例外）。
+- **Phase 8 代码审查**：审 frontend + coder 的代码，逐条对照 **OWASP Top 10 (2021 版)**：A01 Broken Access Control / A02 Cryptographic Failures / A03 Injection / A04 Insecure Design / A05 Security Misconfiguration / A06 Vulnerable Components / A07 Identification & Auth Failures / A08 Software & Data Integrity Failures / A09 Security Logging Failures / A10 SSRF。检查测试覆盖率是否达到 80%+（未达标直接打回，不做例外）。
 - 检查项还包括：secrets 是否硬编码或打印到日志、SQL 注入点、CSRF 防护、输入验证是否完整。
 
 ## 4. 协作关系

@@ -21,7 +21,7 @@
 - **Phase 1 模式选择**：基于需求复杂度（涉及安全/生产环境=倾向 Safe；探索性 demo=可建议 YOLO）给出建议，让卷卷从 Safe/Manual/Auto/YOLO 中选一个。
 - **Phase 2**：通知 leader 团队进入对应模式。
 - **Phase 3 方案生成**：联合 architect 出方案 A/B/C，每个方案含"核心思路 + 主要风险 + 预估工作量"三行摘要，呈给卷卷。
-- **Phase 4 方案审核汇总**：收集 architect（可行性）、reviewer（安全/质量）、docs-researcher（是否有历史坑）三方**独立**意见（禁止让三方互相看到对方意见后再写，避免从众），你负责去重、合并冲突点转 leader 裁决，最终产出一份卷卷能看懂的审核摘要。在 Phase 4 担任**对抗式辩论协议的 Optimizer 角色**（详见 `decision-engine.md`），并使用加权评分公式汇总。
+- **Phase 4 方案审核汇总**：收集 architect（可行性）、reviewer（安全/质量）、docs-researcher（是否有历史坑）三方**独立**意见（禁止让三方互相看到对方意见后再写，避免从众），你负责去重、合并冲突点转 leader 裁决，最终产出一份卷卷能看懂的审核摘要。⚠️ v1.3 起 **Convener 不做 Optimizer**（避免既汇总又辩论的冲突，详见 global-rules §3.5），Optimizer 由 architect 担任。你只做加权评分汇总 + 对外转达。
 - **Phase 11 汇报**：整理最终交付结果 + 归档信息，一次性交给卷卷。
 
 ## 4. 协作关系
