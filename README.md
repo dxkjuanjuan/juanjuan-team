@@ -277,17 +277,62 @@ Convener 会自我介绍，并问你这次想做什么。
 
 **结论**：对于**安全关键任务（auth/payment/PII）**、**大型架构设计（百万用户级）**、**不可逆操作（生产部署）**--卷卷团队的 token/时间消耗是合理代价。对于单文件 typo，用 Lite 模式（仅 reviewer + 1 sub，~5 万 token）。
 
-### Lite/Medium/Complex 自动选模式
+### Lite/Medium/Complex 三档 -- 任务越大，对抗越强
 
-卷卷团队按任务复杂度自动选 spawn 方式，不浪费 token：
+卷卷团队按任务复杂度自动选模式，**轻量任务便宜又好，大型任务极致对抗**：
 
-| 任务级别 | 判定 | spawn 方式 | token 消耗 | 适合 |
-|---------|------|----------|----------|------|
-| **Lite** | 单文件 / 不跨模块 | Agent Teams teammate | ~50k | typo / 小 bug |
-| **Medium** | 2-5 文件 / 跨 1-2 模块 | Agent Teams teammate | ~200k | 小功能 / 工具 |
-| **Complex** | >5 文件 / 跨 ≥3 模块 / 安全关键 | **claude -p 真进程** | ~500k-1M | 大系统 / auth / 支付 |
+#### 🟢 Lite 模式（简单任务）-- **省 token，效果也好**
 
-`task-classify.sh` 5 问结构化判定，自动选模式，不强制全配 7 Agent。
+| 维度 | 数值 |
+|------|------|
+| 判定 | 单文件 / 不跨模块 / 无架构影响（如 typo、小 bug） |
+| spawn 方式 | Agent Teams teammate（同进程独立 context） |
+| Agent 数 | 2（reviewer + 1 sub） |
+| token 消耗 | **~50k**（跟单 Agent 差不多） |
+| 耗时 | ~5 分钟 |
+| 对抗性 | ✅ 一定有（盲审隔离 + reviewer 挑错） |
+| 效果 | 比单 Agent 好（有独立审核），但 token 没多多少 |
+
+**适合**：单文件 typo、小脚本、配置改动、单 bug 修复
+
+#### 🟡 Medium 模式（中等任务）-- **稍贵，但效果明显更好**
+
+| 维度 | 数值 |
+|------|------|
+| 判定 | 2-5 文件 / 跨 1-2 模块 / 新功能但不跨模块 |
+| spawn 方式 | Agent Teams teammate |
+| Agent 数 | 3-5（convener + architect + reviewer + 可选 coder/frontend） |
+| token 消耗 | **~200k**（是单 Agent 的 4 倍） |
+| 耗时 | ~10 分钟 |
+| 对抗性 | ✅ 强（独立审核 + 加权决策 + 对抗辩论） |
+| 效果 | **明显比单 Agent 好**（reviewer 挑出 architect 漏的真问题） |
+
+**适合**：新功能开发、小工具、API 端点、组件实现
+
+#### 🔴 Complex 模式（大型任务）-- **贵，但极致对抗，非常非常牛**
+
+| 维度 | 数值 |
+|------|------|
+| 判定 | >5 文件 / 跨 ≥3 模块 / 安全关键（auth/payment/PII）/ 大型架构设计 |
+| spawn 方式 | **claude -p 真独立 OS 进程**（PPID=1，进程级隔离） |
+| Agent 数 | 6 真 claude -p 进程 + 1 主会话（convener） |
+| token 消耗 | **~500k-1M**（9 进程累计） |
+| 耗时 | ~22 分钟 |
+| 对抗性 | ✅ **极致**（进程级隔离 + 盲审 0 泄漏 + leader 真裁决 + sub-agent team 专项审查） |
+| 效果 | **质量最高**（critical 全挑出 + 结构性反自我背书 + 真并行） |
+
+**适合**：百万用户系统设计、支付系统、auth 系统、大型重构、安全关键任务
+
+### 三档对比一句话
+
+| 模式 | token | 对抗性 | 何时用 |
+|------|-------|--------|--------|
+| 🟢 Lite | ~50k | 一定有 | 简单任务，省 token 也比单 Agent 好 |
+| 🟡 Medium | ~200k | 强 | 中等任务，稍贵但效果明显更好 |
+| 🔴 Complex | ~500k-1M | **极致** | 大型任务，贵但**独立的对抗，非常非常牛** |
+
+**`task-classify.sh` 5 问结构化判定，自动选模式**，不强制全配 7 Agent，也不浪费 token。
+
 
 ---
 
