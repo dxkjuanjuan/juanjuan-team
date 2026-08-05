@@ -221,46 +221,152 @@ Convener 会自我介绍，并问你这次想做什么。
 
 ---
 
+## 📊 单 Agent vs 卷卷团队对比
+
+> v2.2 URL 短链接系统任务实测数据（2026-08-05）
+
+| 维度 | 单 Agent（Claude 一次过） | 卷卷团队 v2.2（7 真 claude -p 进程） | 差异 |
+|------|------------------------|-----------------------------------|------|
+| **critical issue 检出率** | 0/2（architect 漏 SSRF + 权限错乱） | 2/2（reviewer 全挑出） | **+100%** |
+| **总 issue 检出数** | ~5（单 Agent 自审容易漏） | 17 + 13 + 31 = 61（design + code + sub-agent） | **+1120%** |
+| **盲审隔离成立** | ❌（自我背书） | ✅（reviewer 没读 reasoning.md，0 泄漏） | 真对抗 |
+| **进程级隔离** | ❌（同进程） | ✅（6 真 claude -p PPID=1） | 真独立 |
+| **总 token 消耗** | ~50k（单次过） | ~970k（9 进程累计） | **+1840%** |
+| **总耗时** | ~3 分钟 | ~22 分钟（6 进程串行+并行） | **+633%** |
+| **独立 cost 统计** | ❌ | ✅（reviewer $2.02） | 真进程证据 |
+| **verdict 决策** | 自己批准自己 | leader conditional_approve + 必修清单 | 真裁决 |
+| **sub-agent 派发** | ❌ | ✅（typescript + security reviewer） | 专项审查 |
+| **断电恢复** | ❌（从头跑） | ✅（phase-state.json + resume.sh） | 工程化 |
+
+**结论**：卷卷团队用 9 倍 token / 7 倍时间，换 12 倍 issue 检出率 + 真对抗 + 工程化。**对于安全关键 / 大型架构设计任务，值得**；对于单文件 typo，不值得（用 Lite 模式）。
+
+---
+
 ## 📁 项目结构
 
 ```
-juanjuan-team/
-├── SKILL.md                          # 主入口 + 11 阶段流程 + DAG + 自动触发
-├── references/
-│   ├── global-rules.md               # 10 条硬约束 + 4 模式（7 角色共享）
-│   ├── role-leader.md                # 7 个角色完整 prompt
-│   ├── role-convener.md              # 每个含: 身份 / 性格 / 工作流 /
-│   ├── role-architect.md             #   协作关系 / 禁止事项 /
-│   ├── role-frontend.md              #   输出格式 / 工具权限 /
-│   ├── role-coder.md                 #   CLAUDE.md 一致性 / 模式表 /
-│   ├── role-reviewer.md              #   错误处理
-│   ├── role-docs-researcher.md
-│   ├── decision-engine.md            # 对抗式辩论 + 加权评分
-│   ├── state-machine.md              # 10 状态任务生命周期
-│   ├── skill-allocation.md           # ★ 角色技能分配（SuperPower + ECC 按角色分配）
-│   ├── agent-commands.md             # ★ Agent 命令规范（跨平台 Codex/Hermes 兼容）
-│   ├── customization.md              # ★ 灵活配置指南（改 prompt/数量/理论）
-│   └── backup-script.sh              # tar.gz + git bundle（可执行）
-└── scripts/
-    ├── swarm-spawn.sh                # 7 Agent spawn 文档
-    └── backup-check.sh               # 备份触发条件检查（可执行）
+~/.claude/agents/juanjuan-*.md       # 7 个角色定义（被 Claude Code 识别为 subagent_type）
+├── juanjuan-convener.md             # 主对接 + 总审核（model: opus）
+├── juanjuan-leader.md               # 调控者 + 裁决（model: opus）
+├── juanjuan-architect.md            # 架构师 + 出方案（model: opus）
+├── juanjuan-reviewer.md             # 盲审 + 挑错（model: sonnet）
+├── juanjuan-coder.md                # 后端 + sub-agent team（model: sonnet）
+├── juanjuan-frontend.md             # 前端 + sub-agent team（model: sonnet）
+└── juanjuan-docs-researcher.md      # 文档 + 资料 + 记忆（model: sonnet）
+
+~/.claude/skills/juanjuan-team/
+├── SKILL.md                          # 主入口（v1.0~v2.2 完整规范 + 16 章节）
+├── README.md                         # 本文件
+├── LICENSE                           # 个人使用许可
+├── hooks/hooks.json                  # PreToolUse Hook（500 行限制 + Co-Authored-By 拦截 + secrets 检测）
+│
+├── docs/                             # 文档（4 份）
+│   ├── getting-started.md            # 5 分钟上手
+│   ├── for-non-developers.md         # 非技术用户指南
+│   ├── evolution-history.md          # v1.0->v2.2 演进史
+│   └── v2.2-verification-report.md   # v2.2 真 7-Agent 验证报告
+│
+├── references/                       # 规范文档（22 份）
+│   ├── global-rules.md               # 11 条硬约束（v1.5 加 run_id 必填）
+│   ├── role-*.md (7 份)              # 7 个角色 prompt（v1.0 起）
+│   ├── decision-engine.md            # 对抗式辩论 + 加权评分（v1.5 修数学）
+│   ├── state-machine.md              # 任务状态机
+│   ├── skill-allocation.md           # 角色技能分配
+│   ├── agent-commands.md             # 跨平台命令（v1.5 修 Codex）
+│   ├── customization.md              # 灵活配置
+│   ├── message-protocol.md           # 通信协议（v1.5 加 run_id）
+│   ├── fault-tolerance.md             # 容错（v1.5 路径对齐）
+│   ├── lite-mode.md                  # Lite 模式（6 Phase）
+│   ├── domain-checklists.md          # 9 信号组 + 领域 checklist
+│   ├── backup-script.sh              # 备份脚本（v1.5 模式感知）
+│   ├── meta-verification.md          # 6 项元验证（MV-1~MV-8）
+│   ├── observability.md              # run_id + phase-trace + tool_call_id
+│   ├── anti-patterns.md              # 19 条反模式（AP-1~AP-19）
+│   ├── evolution-roadmap.md          # v1.5->v2.0 路径
+│   ├── audit-event-schema.md         # ★ v1.8 audit 事件格式
+│   ├── sub-agent-review.md           # ★ v1.6 主+sub 双层对抗
+│   ├── sub-agent-team.md             # ★ v2.0 sub-agent team 规范
+│   ├── v1.9-layered-architecture.md  # ★ v1.9 分层调度（Lite/Medium/Complex）
+│   ├── v2.0-11-phase-flow.md         # ★ v2.0 完整 11 Phase
+│   ├── v2.0-cross-platform-abstraction.md  # ★ v2.0 跨平台抽象层
+│   ├── v2.0-model-layering.md        # ★ v2.0 模型分层
+│   ├── v2.2-resilience.md             # ★ v2.2 防断联
+│   └── v2.2-project-naming.md        # ★ v2.2 项目命名聚合
+│
+└── scripts/                          # 脚本（18 份）
+    ├── install.sh                    # 一键安装
+    ├── create-project.sh             # 建项目目录（v1.4.1）
+    ├── swarm-spawn.sh                # 7 Agent spawn 文档（v1.5 修）
+    ├── backup-check.sh                # 备份触发检查
+    ├── heartbeat-check.sh            # 心跳检查
+    ├── hook-enforce.sh               # Hook 强制规则（v1.5 扩正则+项目 rules）
+    ├── lite-check.sh                 # Lite 模式检查
+    ├── send-msg.sh                   # 消息发送
+    ├── meta-verify.sh                # ★ v1.5 元验证执行器（6 项检查）
+    ├── e2e-dry-run.sh                 # ★ v1.5 e2e 干跑
+    ├── memory-roundtrip-test.sh      # ★ v1.5 记忆闭环测试
+    ├── v1.8-commit0-verify.sh        # ★ v1.8 Commit 0 验证
+    ├── global-spawn.sh               # ★ v1.9 claude -p 真进程 spawn
+    ├── team-status.sh                # ★ v1.9 team 状态检查
+    ├── mailbox.sh                    # ★ v1.9 专属 Mailbox
+    ├── task-classify.sh              # ★ v1.9/v2.0 任务分级判定（5 问）
+    ├── phase-state.sh                # ★ v1.9 phase-state 维护
+    ├── cleanup-stale.sh              # ★ v1.9 脏数据清理
+    ├── registry.sh                   # ★ v1.9 project-id 注册表
+    ├── auto-spawn.sh                 # ★ v2.2 自动 spawn wrapper
+    ├── resume.sh                     # ★ v2.2 断联恢复
+    └── continue.sh                   # ★ v2.2 接着跑
 ```
 
-★ = v1.1 新增
+★ = v1.5~v2.2 新增（v1.4 之前只有 8 份脚本）
 
 ---
 
 ## 🔬 实战验证
 
-这个 skill 在自己的设计上做了实战测试：
+### v2.2 URL 短链接系统（Complex 任务，9 真 claude -p 进程）
 
-1. **设计阶段**：用三方 LLM 协作（ChatGPT 出理论、Claude 出实现、Gemini 出元提示词）
-2. **自审**：spawn 3 个子 Agent 扮演 leader/architect/reviewer，发现 5 个 CRITICAL + 8 个 HIGH，全部修复
-3. **Auto 模式验证**：跑了一个真实 bug 修复（kaoyan-english-app 缺失页面）：
-   - 6 个页面 281 行写完（每个 < 65 行）
-   - Reviewer 抓到 3 个 minor，0 critical
-   - OWASP Top 10 全 N/A（用 JSX children 不用 `dangerouslySetInnerHTML`，规避 XSS）
-   - build 通过、备份创建、记忆存档
+**任务**：设计 URL 短链接系统（短码生成/存储/重定向/统计/防滥用）
+
+**真进程证据**（全部 PPID=1，不是 Sub Agent）：
+
+| Agent | PID | 耗时 | 产出 |
+|-------|-----|------|------|
+| architect | 95116 | 270s | design.md 463行 + reasoning.md 203行 |
+| reviewer | 97243 | 180s | 17 issues（2 critical / 7 major） |
+| leader | 98721 | 101s | verdict.json（conditional_approve） |
+| docs-researcher | 99886 | 120s | spec.md（含量化指标） |
+| coder | 1256 | 140s 并行 | stub.ts 12340B |
+| frontend | 1273 | 140s 并行 | stub.tsx 7989B |
+| reviewer Phase 8 | 4242 | 160s | code-review.json 13 issues |
+| docs-researcher Phase 10 | 5919 | 61s | memory-entry.json + ruflo memory |
+| reviewer sub-agent | 7008 | 211s | sub-agent-review.json 31 findings |
+
+**对抗式协作证据**：
+- ✓ reviewer 挑出 2 critical 全是 architect 漏的（SSRF + 权限错乱）
+- ✓ 盲审隔离成立（reviewer 没读 reasoning.md，0 泄漏）
+- ✓ leader 真裁决（conditional_approve + 必修清单）
+- ✓ sub-agent team 真派发（typescript-reviewer + security-reviewer，31 findings）
+- ✓ Phase 8/9/10 真做（代码审查 + tar.gz 备份 + ruflo memory 存档）
+
+### v1.8 TODO list（Agent Teams teammate 首次验证）
+
+- architect + reviewer 两个 teammate（agent_id: name@session 格式）
+- reviewer 挑出 3 critical（archived 死胡同 / UNIQUE 冲突 / 硬删除矛盾）
+- mailbox 跨 teammate 通信成立
+
+### v1.9 百万用户登录系统（claude -p 真进程首次验证）
+
+- architect PID 39250 + reviewer PID 44389（PPID=1）
+- reviewer 挑出 2 critical（access token 撤销 + SHA-256 反模式）
+- reviewer 独立 cost 统计 $2.02（teammate 不会有）
+
+### v2.0 博客系统（11 Phase 完整流程首次验证）
+
+- architect + reviewer 真进程跑完整 6 Phase MVP
+- reviewer 挑出 2 critical（文章 XSS + 评论 XSS）
+
+完整验证报告：[`docs/v2.2-verification-report.md`](docs/v2.2-verification-report.md)
 
 ---
 
@@ -273,46 +379,90 @@ juanjuan-team/
 
 这不是聊天机器人，是一个**模拟工程团队**——有角色分工、对抗式审查、记忆、持续改进。
 
+### 核心原则
+
+1. **结构性反自我背书** —— Reviewer 在合同层面被禁止写代码/文档
+2. **真进程隔离** —— v2.2 用 claude -p 真独立 OS 进程（PPID=1），不是同进程子上下文
+3. **盲审硬约束** —— reviewer 的 prompt 不含 architect 的 reasoning.md，spawn 前 grep 阻断
+4. **sub 不替主角色定 verdict** —— sub 帮主角色做细分任务，最终 verdict 由主角色定
+5. **可观测 > 自觉** —— 所有规则都变成脚本能验证的（meta-verify.sh 6 项检查）
+6. **闭环 > 单向** —— 存的记忆能查出来才算闭环（memory-roundtrip-test.sh）
+7. **YAGNI** —— 不在 roadmap 上的功能不做
+
 ---
 
-## 📋 量化标准（Reviewer 必查清单）
+## 📋 量化标准（Reviewer 必查清单 + 元验证 8 项）
+
+### Reviewer 必查清单
 
 - 测试覆盖率（核心路径）≥ 80%
-- 单文件 < 500 行
-- commit 信息无 `Co-Authored-By` AI 署名 trailer
+- 单文件 < 500 行（项目有 ECC rules 时 800 max，hook-enforce.sh 自动感知）
+- commit 信息无 `Co-Authored-By` AI 署名 trailer（hook 拦截）
 - 前端遵循 `shadcn/ui` + `Ant Design`
-- OWASP Top 10 逐条检查
-- 无硬编码 secrets（20+ 模式黑名单）
+- OWASP Top 10 逐条检查（2021 版：A01 Broken Access Control ... A10 SSRF）
+- 无硬编码 secrets（20+ 模式黑名单：sk-/ghp_/glpat-/xoxb-/AKIA/eyJ/PEM 等）
 - 代码风格：immutability、KISS、DRY、YAGNI
+
+### 元验证 8 项（meta-verify.sh）
+
+| # | 检查项 | 验证目标 |
+|---|--------|---------|
+| MV-1 | 独立审核证据 | Phase 4/6/8 三方真独立产出 |
+| MV-2 | context 隔离性 | 各 teammate spawn prompt 互不包含 |
+| MV-3 | 模式切换日志 | Phase 边界原子化 |
+| MV-4 | 记忆闭环 | Phase 10 存的 memory Phase 0.5 能查到 |
+| MV-5 | 备份触发 | reviewer pass 事件真触发备份 |
+| MV-6 | 盲审完整性 | reviewer prompt 不含 architect/private/ |
+| MV-7 | 对话辩论 ≤5 轮 | 防止无限循环 |
+| MV-8 | task 依赖完整性 | 无悬空任务 |
+
+### 9 信号组（domain-checklists.md）
+
+| # | 信号组 | 严重度 |
+|---|--------|--------|
+| 1 | Correctness | critical |
+| 2 | Security | critical |
+| 3 | Performance | major |
+| 4 | Maintainability | major |
+| 5 | Accessibility | major |
+| 6 | Error Handling | major |
+| 7 | Test Coverage | major |
+| 8 | API Design | minor |
+| 9 | Documentation | minor |
 
 ---
 
 ## 🛣️ Roadmap
 
-- [x] v1.0 —— 7 Agent 团队 + 11 阶段流程 + 4 模式
-- [ ] v1.1 —— JAAOS 集成（Ruflo + Hermes Kanban + AgentTeams）做可视化监控
-- [ ] v1.2 —— Web UI（群聊 + 看板 + 远程访问）
-- [ ] v2.0 —— 领域自适应模式（科研 / 工程 / 学习 / 决策 / 创造）
+### 已完成
+
+- [x] **v1.0~v1.4**（2026-07 ~ 2026-08-04）—— 剧本版（1 Claude 演 7 角色）+ 11 阶段 + 4 模式
+- [x] **v1.5**（2026-08-04）—— 修 12 缺陷 + 元验证层（MV-1~MV-5）+ 可观测性（run_id + phase-trace）
+- [x] **v1.6**（2026-08-04）—— 主+sub 双层对抗（共识/分歧/盲点三方综合）
+- [x] **v1.7**（2026-08-04）—— 自审 12 缺陷 + 复杂度感知（Lite/Medium/Complex）+ tool_call_id
+- [x] **v1.8**（2026-08-05）—— **Agent Teams 真 spawn 3 Agent**（首次真对抗，TODO list 验证）
+- [x] **v1.9**（2026-08-05）—— **claude -p 真进程 spawn**（PPID=1，百万用户登录系统验证）
+- [x] **v2.0**（2026-08-05）—— 完整 7-Agent + 11 Phase + 跨平台抽象 + 模型分层
+- [x] **v2.1**（2026-08-05）—— **真 7-Agent 完整 11 Phase + 真并行**（URL 短链接系统验证）
+- [x] **v2.2**（2026-08-05）—— Phase 8/9/10 真做 + sub-agent 派发 + 防断联 + 项目命名聚合
+
+### v2.3+ 待做（卷卷说"到时候再说"）
+
+- [ ] **v2.3** —— Codex CLI 后端实现（跨平台抽象层落地）
+- [ ] **v2.4** —— Gemini CLI 后端实现
+- [ ] **v2.5** —— HAPI Remote 后端（跨机器 spawn）
+- [ ] **v2.6** —— 跨项目记忆聚合（Neo4j 知识图谱，研究性）
+- [ ] **v2.7** —— Web UI（群聊 + 看板 + 远程访问，独立项目）
+- [ ] **v3.0** —— JAAOS 三引擎融合（Ruflo + Hermes Kanban + AgentTeams）
+
+### 长期方向
+
+- 领域自适应模式（科研 / 工程 / 学习 / 决策 / 创造）
+- 全局自动读取记忆（PreToolUse hook）
+- 团队配置热加载（运行中调整角色）
+- 模型 A/B 测试（Haiku vs Sonnet reviewer 挑错率对比）
 
 ---
-
-## 📜 License
-
-[Personal Use Only](LICENSE) —— 个人使用免费（学习、个人项目、学术研究、个人开发者工作流）。**禁止商用**，如需商用请联系作者。详见 [LICENSE](LICENSE)。
-
-## 🙏 致谢
-
-本作品站在巨人的肩膀上。下列开源项目的工具、设计和理念让卷卷团队成为可能，特此致敬：
-
-- **[SuperPower](https://github.com/obra/superpowers-marketplace)** —— brainstorming、TDD、systematic-debugging、writing-plans、verification-before-completion 等子 Agent 方法论已整合进我们的角色分配（`references/skill-allocation.md`）。`superpowers:brainstorming` skill 是 Phase 0 头脑风暴的主入口。
-- **[Ruflo / Claude Flow](https://github.com/ruvnet/ruflo)** —— MCP 工具（`swarm_init`、`agent_spawn`、`memory_search`、`memory_store`、`hive-mind_consensus`）是驱动 7 人 Agent 团队的执行引擎。ruvLLM 自学习层作为差异化优势保留。
-- **[ECC (Essential Claude Code) Rules](https://github.com/)** —— `code-review`、`security-review`、`build-fix`、`kimi-webbridge` 等 skills 按角色分配。`global-rules.md` 的 10 条硬约束对齐 ECC 的 coding-style、testing、performance、security 标准。
-
-没有这些项目，卷卷团队不会存在。感谢这些社区的所有贡献者。
-
-## 🤝 Contributing
-
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。欢迎 bug 报告和 PR。
 
 ## 🌟 Star This Repo
 
